@@ -26,14 +26,15 @@ public static void main(String args[])
 	  
 	  if(args.length==0){
 		  System.out.println("Name:Omkar Nalawade\nSEAS Login:omkarn");
-		  System.exit(1);
+		  return;
 	  }
 	  if(args.length!=2){
 		  System.out.println("Incorrect Arguments");
-		  System.exit(1);  
+		  return;  
 	  }
 	  try{
 		  portNumber = Integer.valueOf(args[0]);
+		  
 		  rootDirectory = args[1].trim();
 		  if(rootDirectory.endsWith("/")){
 			  rootDirectory = rootDirectory.substring(0,rootDirectory.length()-1);
@@ -53,18 +54,25 @@ public static void main(String args[])
 	  
 	  try {
 		server = new ServerSocket(portNumber);
-		bQueue = new BlockingQueue();
+		//bQueue = new BlockingQueue();
 		threadPool = new ThreadPool(portNumber,rootDirectory,noOfThreads);
 		threadPool.executeThreadPool();
-		WorkerThread workThread;
-		Socket socket;
+		
 		//packetInfo = new PacketInformation(portNumber,rootDirectory,server);
 		
 		System.out.println("Listening for connection on port: "+portNumber);
-		
+		while(threadPool.checkThreadPoolRunning()){
+			Socket sock = server.accept();
+			threadPool.add(sock);
+			//bQueue.enqueue(sock);
+		}
+	
+	} catch (InterruptedException e) {
+		// TODO Auto-generated catch block
+		System.out.println("Socket sock did not accept");
 	} catch (IOException e) {
 		// TODO Auto-generated catch block
-		e.printStackTrace();
+		System.out.println("Server socket was not initialized");
 	}
   }
   

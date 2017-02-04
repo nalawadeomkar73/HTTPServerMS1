@@ -28,10 +28,10 @@ public class BlockingQueue {
 	}
 	
 	public synchronized Socket dequeue()throws InterruptedException{
-		/*while(this.queue.size()==0){
+		while(this.blockingQueue.size()==0){
 			wait();
 		}
-		if(this.queue.size()==this.limit){
+		/*if(this.queue.size()==this.limit
 			notifyAll();
 		}*/
 		return this.blockingQueue.remove(0);

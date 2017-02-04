@@ -1,5 +1,6 @@
 package edu.upenn.cis455.webserver;
 
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,7 @@ public class ThreadPool {
 	private int noOfThreads;
 	private ArrayList<WorkerThread> threadPool;
 	private ArrayList<WorkerThread> listOfThreads;
+	private BlockingQueue bQueue;
 
 	public ThreadPool(int portNumber, String rootDirectory, int noOfThreads){
 		super();
@@ -20,13 +22,15 @@ public class ThreadPool {
 		this.threadPool = new ArrayList<WorkerThread>();
 		this.listOfThreads = new ArrayList<WorkerThread>();
 		this.isRunning = true;
+		bQueue = new BlockingQueue();
+		
 	}
 	
 	public void executeThreadPool() {
 		
 		// TODO Auto-generated method stub
 		for(int i=0;i<noOfThreads;i++){
-			threadPool.add(new WorkerThread(i,rootDirectory,this));
+			threadPool.add(new WorkerThread(i,rootDirectory,this,bQueue));
 			listOfThreads.add(threadPool.get(i));
 		}
 		for(WorkerThread thread: threadPool){
@@ -69,5 +73,10 @@ public class ThreadPool {
 	
 	public synchronized ArrayList<WorkerThread> getListOfThreads(){
 		return listOfThreads;
+	}
+
+	public void add(Socket sock) throws InterruptedException {
+		// TODO Auto-generated method stub
+		bQueue.enqueue(sock);
 	}
 }
