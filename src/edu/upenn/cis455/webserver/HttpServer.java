@@ -41,8 +41,9 @@ public static void main(String args[])
 		  }
 		  
 		  if(!(new File(rootDirectory).exists())){
+			  System.out.println("Hello");
 			  System.out.println("Name:Omkar Nalawade\nSEAS Login:omkarn");
-			  System.exit(1);
+			  return;
 		  }
 	  }
 	  catch(NumberFormatException e){
