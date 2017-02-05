@@ -13,6 +13,7 @@ public class ThreadPool {
 	private ArrayList<WorkerThread> threadPool;
 	private ArrayList<WorkerThread> listOfThreads;
 	private BlockingQueue bQueue;
+	protected static int count = 0;
 
 	public ThreadPool(int portNumber, String rootDirectory, int noOfThreads){
 		super();
@@ -78,5 +79,11 @@ public class ThreadPool {
 	public void add(Socket sock) throws InterruptedException {
 		// TODO Auto-generated method stub
 		bQueue.enqueue(sock);
+	}
+
+	public void setRunningStatus(boolean b) {
+		// TODO Auto-generated method stub
+		this.isRunning = b;
+		
 	}
 }

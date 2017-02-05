@@ -11,7 +11,7 @@ class HttpServer {
   
   private static int portNumber;
   private static String rootDirectory;
-  private static ServerSocket server;
+  static ServerSocket server;
   private static BlockingQueue bQueue;
  // private static PacketInformation packetInfo;
   private static ThreadPool threadPool;
@@ -67,6 +67,7 @@ public static void main(String args[])
 			threadPool.add(sock);
 			//bQueue.enqueue(sock);
 		}
+		server.close();
 	
 	} catch (InterruptedException e) {
 		// TODO Auto-generated catch block

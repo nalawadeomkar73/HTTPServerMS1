@@ -24,6 +24,8 @@ public class WorkerThread extends Thread{
 	private ThreadPool threadPool;
 	private BlockingQueue bq;
 	private Socket mySock;
+	//private boolean isShutdown;
+	//private int ThreadPool.count;
 	
 
 	public WorkerThread(int threadId, String rootDirectory, ThreadPool threadPool, BlockingQueue bq) {
@@ -38,6 +40,7 @@ public class WorkerThread extends Thread{
 	}
 	
 	public void run(){
+		while(threadPool.checkThreadPoolRunning()){
 		try {
 			mySock = bq.dequeue();
 			OutputStream outtoClient = mySock.getOutputStream();
@@ -88,13 +91,23 @@ public class WorkerThread extends Thread{
 									// TODO Auto-generated catch block
 									outtoClient.write(HTTPHandler.get500StatusMessage().giveHttpResponse().getBytes());
 								}
-								if((dateWhenFileModified.after(dateWhenModified))&&(requestHttp.getParserMap().containsKey("if-unmodified-since"))){
-									outtoClient.write(HTTPHandler.get412StatusMessage().giveHttpResponse().getBytes());
-								}else{
-									if((requestHttp.getParserMap().containsKey("if-modified-since"))&&(!dateWhenFileModified.after(dateWhenModified))){
-										outtoClient.write(HTTPHandler.get304StatusMessage().giveHttpResponse().getBytes());
+								if(requestHttp.getParserMap().containsKey("if-unmodified-since")){
+									if(dateWhenFileModified.after(dateWhenModified)){
+										outtoClient.write(HTTPHandler.get412StatusMessage().giveHttpResponse().getBytes());
+									}
+									else{
+										outtoClient.write(HTTPHandler.get200StatusMessage().giveHttpResponse().getBytes());
 									}
 								}
+								if(requestHttp.getParserMap().containsKey("if-modified-since")){
+									if(!dateWhenFileModified.after(dateWhenModified)){
+										outtoClient.write(HTTPHandler.get304StatusMessage().giveHttpResponse().getBytes());
+									}
+									else{
+										outtoClient.write(HTTPHandler.get200StatusMessage().giveHttpResponse().getBytes());
+									}
+								}
+									
 							}else{
 								contentOutput = new String(bytesArray);
 								requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
@@ -152,6 +165,70 @@ public class WorkerThread extends Thread{
 						else{
 							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse().getBytes());
 						}
+					}else{
+						outtoClient.write(HTTPHandler.get404StatusMessage().giveHttpResponse().getBytes());
+					}
+				}else{
+					if(requestHttp.getFilePath().equalsIgnoreCase("/control")){
+						StringBuilder controlOutput = new StringBuilder();
+						controlOutput.append("<html><body><br/>Total Worker Threads: "+threadPool.getListOfThreads().size()+"<br/>");
+						controlOutput.append("Busy Threads: "+(threadPool.getListOfThreads().size()-threadPool.getThreadPool().size())+"<br/>");
+						controlOutput.append("Available Threads: "+(threadPool.getThreadPool().size())+"<br/>");
+						controlOutput.append("<a href=\"http://localhost:"+threadPool.getPortNumber()+"/shutdown\">SHUTDOWN</a><br/>");
+						controlOutput.append("<br/>All Worker Threads: <br/>");
+						for (WorkerThread worker : threadPool.getListOfThreads()){
+							if(worker.getState().equals(Thread.State.RUNNABLE)){
+								controlOutput.append(worker.threadId+" "+worker.requestHttp.getFilePath()+"<br/>");
+							}else{
+								controlOutput.append(worker.threadId+" "+worker.getState()+"<br/>");
+							}
+							
+						}
+						controlOutput.append("</body></html>");
+						contentOutput = controlOutput.toString();
+						requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+						requestHttpMessages.put("Content-Length",""+contentOutput.length());
+						requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
+						requestHttpMessages.put("Connection", "Close");
+						responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
+						if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
+							outtoClient.write(responseHttp.giveHttpResponseWithHeaders().getBytes());
+						}
+						else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
+							outtoClient.write(responseHttp.giveHttpResponse().getBytes());
+						}
+						else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
+							outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse().getBytes());
+						}
+						else{
+							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse().getBytes());
+						}
+						
+					}else if(requestHttp.getFilePath().equalsIgnoreCase("/shutdown")){
+						threadPool.setRunningStatus(false);
+						for (WorkerThread worker : threadPool.getListOfThreads()){
+							worker.interrupt();
+						}
+						Shutdown sd = new Shutdown();
+						sd.start();
+						//spawn a new thread
+						requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+						requestHttpMessages.put("Content-Length",""+contentOutput.length());
+						requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
+						requestHttpMessages.put("Connection", "Close");
+						responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
+						if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
+							outtoClient.write(responseHttp.giveHttpResponseWithHeaders().getBytes());
+						}
+						else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
+							outtoClient.write(responseHttp.giveHttpResponse().getBytes());
+						}
+						else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
+							outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse().getBytes());
+						}
+						else{
+							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse().getBytes());
+						}
 					}
 				}
 				
@@ -173,6 +250,9 @@ public class WorkerThread extends Thread{
 			System.out.println("Outputstream did not work");
 		}
 	}
+		ThreadPool.count++;
+	}
+	
 
 	private RequestData reqParser(BufferedReader inputData) {
 		// TODO Auto-generated method stub
