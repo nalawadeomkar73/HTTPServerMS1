@@ -9,6 +9,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.text.ParseException;
+import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -77,7 +79,22 @@ public class WorkerThread extends Thread{
 						}
 						else{
 							if((requestHttp.getParserMap().containsKey("if-modified-since"))||(requestHttp.getParserMap().containsKey("if-unmodified-since"))){
-								
+								Calendar dateWhenModified = new GregorianCalendar();
+								Calendar dateWhenFileModified = new GregorianCalendar();
+								dateWhenFileModified.setTimeInMillis(fp.lastModified());
+								try {
+									dateWhenModified.setTime(requestHttp.getParserMap().containsKey("if-modified-since")?HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-modified-since")):HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-unmodified-since")));
+								} catch (ParseException e) {
+									// TODO Auto-generated catch block
+									outtoClient.write(HTTPHandler.get500StatusMessage().giveHttpResponse().getBytes());
+								}
+								if((dateWhenFileModified.after(dateWhenModified))&&(requestHttp.getParserMap().containsKey("if-unmodified-since"))){
+									outtoClient.write(HTTPHandler.get412StatusMessage().giveHttpResponse().getBytes());
+								}else{
+									if((requestHttp.getParserMap().containsKey("if-modified-since"))&&(!dateWhenFileModified.after(dateWhenModified))){
+										outtoClient.write(HTTPHandler.get304StatusMessage().giveHttpResponse().getBytes());
+									}
+								}
 							}else{
 								contentOutput = new String(bytesArray);
 								requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
