@@ -11,7 +11,7 @@ class HttpServer {
   
   private static int portNumber;
   private static String rootDirectory;
-  static ServerSocket server;
+  protected static ServerSocket server;
   private static BlockingQueue bQueue;
  // private static PacketInformation packetInfo;
   private static ThreadPool threadPool;

@@ -52,15 +52,16 @@ public class WorkerThread extends Thread{
 			
 			if(requestHttp == null){
 				System.out.println("Invalid HTTP Request");
-				outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse().getBytes());
+				outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 			}
 			else if(!requestHttp.isCorrectMessage()){
 				System.out.println("Invalid HTTP Request with wrong input message");
-				outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse().getBytes());
+				outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 			}
+			
 			else{
 				if(requestHttp.getParserMap().containsKey("expect")){
-					outtoClient.write(HTTPHandler.get100StatusMessage().giveHttpResponse().getBytes());
+					outtoClient.write(HTTPHandler.get100StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 				}
 				if(requestHttp.getFilePath().contains("http://localhost:"+threadPool.getPortNumber())){
 					String newFilePath = requestHttp.getFilePath().substring(("http://localhost:"+threadPool.getPortNumber()).length());
@@ -71,42 +72,87 @@ public class WorkerThread extends Thread{
 				Map<String,String> requestHttpMessages = new HashMap<String,String>();
 				if(fp.exists()){
 					if(fp.canRead()==false){
-						outtoClient.write(HTTPHandler.get403StatusMessage().giveHttpResponse().getBytes());
+						outtoClient.write(HTTPHandler.get403StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 					}
+
 					else if(fp.isFile()){
 						FileInputStream inputStream = new FileInputStream(fp);
 						byte[] bytesArray = new byte[(int) fp.length()];
-						
-						if(Files.probeContentType(fp.toPath())==null){
-							outtoClient.write(HTTPHandler.get404StatusMessage().giveHttpResponse().getBytes());
+						if(inputStream.read(bytesArray, 0, bytesArray.length)!=fp.length())
+						{
+							outtoClient.write(HTTPHandler.get500StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 						else{
-							if((requestHttp.getParserMap().containsKey("if-modified-since"))||(requestHttp.getParserMap().containsKey("if-unmodified-since"))){
-								Calendar dateWhenModified = new GregorianCalendar();
-								Calendar dateWhenFileModified = new GregorianCalendar();
-								dateWhenFileModified.setTimeInMillis(fp.lastModified());
-								try {
-									dateWhenModified.setTime(requestHttp.getParserMap().containsKey("if-modified-since")?HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-modified-since")):HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-unmodified-since")));
-								} catch (ParseException e) {
+							if(Files.probeContentType(fp.toPath())==null){
+								outtoClient.write(HTTPHandler.get404StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+							}
+							else{
+								if((requestHttp.getParserMap().containsKey("if-modified-since"))||(requestHttp.getParserMap().containsKey("if-unmodified-since"))){
+									Calendar dateWhenModified = new GregorianCalendar();
+									Calendar dateWhenFileModified = new GregorianCalendar();
+									dateWhenFileModified.setTimeInMillis(fp.lastModified());
+									try {
+										dateWhenModified.setTime(requestHttp.getParserMap().containsKey("if-modified-since")?HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-modified-since")):HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-unmodified-since")));
+									} catch (ParseException e) {
 									// TODO Auto-generated catch block
-									outtoClient.write(HTTPHandler.get500StatusMessage().giveHttpResponse().getBytes());
-								}
-								if(requestHttp.getParserMap().containsKey("if-unmodified-since")){
-									if(dateWhenFileModified.after(dateWhenModified)){
-										outtoClient.write(HTTPHandler.get412StatusMessage().giveHttpResponse().getBytes());
+										outtoClient.write(HTTPHandler.get500StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 									}
-									else{
-										outtoClient.write(HTTPHandler.get200StatusMessage().giveHttpResponse().getBytes());
+									if(requestHttp.getParserMap().containsKey("if-unmodified-since")){
+										if(dateWhenFileModified.after(dateWhenModified)){
+										//requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
+										//responseHttp = new ResponseMessage(contentOutput, "412", HTTPHandler.getHttpResponseMessages().get("412"), requestHttpMessages);
+											outtoClient.write(HTTPHandler.get412StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+										}
+										else{
+											contentOutput = new String(bytesArray);
+										
+											requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+											requestHttpMessages.put("Content-Length",""+contentOutput.length());
+											requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
+											requestHttpMessages.put("Connection", "Close");
+											responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
+											if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
+												outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()).getBytes());
+											}
+											else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
+												outtoClient.write(responseHttp.giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+											}
+											else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
+												outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+											}
+											else{
+												outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+											}
+										}	
 									}
-								}
-								if(requestHttp.getParserMap().containsKey("if-modified-since")){
-									if(!dateWhenFileModified.after(dateWhenModified)){
-										outtoClient.write(HTTPHandler.get304StatusMessage().giveHttpResponse().getBytes());
+									if(requestHttp.getParserMap().containsKey("if-modified-since")){
+										if(!dateWhenFileModified.after(dateWhenModified)){
+										//requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
+										//responseHttp = new ResponseMessage(contentOutput, "304", HTTPHandler.getHttpResponseMessages().get("304"), requestHttpMessages);
+											outtoClient.write(HTTPHandler.get304StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+										}
+										else{
+											contentOutput = new String(bytesArray);
+											requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+											requestHttpMessages.put("Content-Length",""+contentOutput.length());
+											requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
+											requestHttpMessages.put("Connection", "Close");
+											requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+											responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
+											if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
+												outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()).getBytes());
+											}
+											else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
+												outtoClient.write(responseHttp.giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+											}
+											else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
+												outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+											}
+											else{
+												outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+											}
+										}
 									}
-									else{
-										outtoClient.write(HTTPHandler.get200StatusMessage().giveHttpResponse().getBytes());
-									}
-								}
 									
 							}else{
 								contentOutput = new String(bytesArray);
@@ -114,24 +160,27 @@ public class WorkerThread extends Thread{
 								requestHttpMessages.put("Content-Length",""+contentOutput.length());
 								requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
 								requestHttpMessages.put("Connection", "Close");
+								requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
 								responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 								if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
-									outtoClient.write(responseHttp.giveHttpResponseWithHeaders().getBytes());
+									outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()).getBytes());
 								}
 								else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
-									outtoClient.write(responseHttp.giveHttpResponse().getBytes());
+									outtoClient.write(responseHttp.giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 								}
 								else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
-									outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse().getBytes());
+									outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 								}
 								else{
-									outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse().getBytes());
+									outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 								}
 							}
 						}
 						inputStream.close();
 					}
+					}
 					else if(fp.isDirectory()){
+						
 						File[] allFiles = fp.listFiles();
 						String htmlStart = "<html><body>";
 						String htmlEnd = "</body></html>";
@@ -139,10 +188,12 @@ public class WorkerThread extends Thread{
 						StringBuilder filesInfo = new StringBuilder();
 						filesInfo.append(htmlStart);
 						filesInfo.append(requestHttp.getFilePath());
+					
 						filesInfo.append("<br/>");
 						for(File file:allFiles){
 							if(!file.getName().endsWith("~")){
 								filesInfo.append("<a href=\"http://localhost:"+threadPool.getPortNumber()+requestHttp.getFilePath()+"/"+file.getName()+"\">"+file.getName()+"</a><br/>");	
+								//System.out.println("Omkar");
 							}
 							
 						}
@@ -152,21 +203,22 @@ public class WorkerThread extends Thread{
 						requestHttpMessages.put("Content-Length",""+contentOutput.length());
 						requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
 						requestHttpMessages.put("Connection", "Close");
+						requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
 						responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 						if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
-							outtoClient.write(responseHttp.giveHttpResponseWithHeaders().getBytes());
+							outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()).getBytes());
 						}
 						else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
-							outtoClient.write(responseHttp.giveHttpResponse().getBytes());
+							outtoClient.write(responseHttp.giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 						else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
-							outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse().getBytes());
+							outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 						else{
-							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse().getBytes());
+							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 					}else{
-						outtoClient.write(HTTPHandler.get404StatusMessage().giveHttpResponse().getBytes());
+						outtoClient.write(HTTPHandler.get404StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 					}
 				}else{
 					if(requestHttp.getFilePath().equalsIgnoreCase("/control")){
@@ -192,16 +244,16 @@ public class WorkerThread extends Thread{
 						requestHttpMessages.put("Connection", "Close");
 						responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 						if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
-							outtoClient.write(responseHttp.giveHttpResponseWithHeaders().getBytes());
+							outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()).getBytes());
 						}
 						else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
-							outtoClient.write(responseHttp.giveHttpResponse().getBytes());
+							outtoClient.write(responseHttp.giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 						else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
-							outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse().getBytes());
+							outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 						else{
-							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse().getBytes());
+							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 						
 					}else if(requestHttp.getFilePath().equalsIgnoreCase("/shutdown")){
@@ -209,7 +261,7 @@ public class WorkerThread extends Thread{
 						for (WorkerThread worker : threadPool.getListOfThreads()){
 							worker.interrupt();
 						}
-						Shutdown sd = new Shutdown();
+						ShutdownThread sd = new ShutdownThread(threadPool);
 						sd.start();
 						//spawn a new thread
 						requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
@@ -218,17 +270,20 @@ public class WorkerThread extends Thread{
 						requestHttpMessages.put("Connection", "Close");
 						responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 						if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
-							outtoClient.write(responseHttp.giveHttpResponseWithHeaders().getBytes());
+							outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()).getBytes());
 						}
 						else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
-							outtoClient.write(responseHttp.giveHttpResponse().getBytes());
+							outtoClient.write(responseHttp.giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 						else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
-							outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse().getBytes());
+							outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 						else{
-							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse().getBytes());
+							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
+					}
+					else{
+						outtoClient.write(HTTPHandler.get404StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 					}
 				}
 				
