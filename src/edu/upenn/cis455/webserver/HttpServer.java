@@ -4,37 +4,41 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.CharBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.util.Iterator;
 
 class HttpServer {
   
   private static int portNumber;
   private static String rootDirectory;
   protected static ServerSocket server;
-  private static BlockingQueue bQueue;
- // private static PacketInformation packetInfo;
   private static ThreadPool threadPool;
   private static final int noOfThreads = 50;
-  
-  
 
 public static void main(String args[])
 
   {
-    /* your code here */
-	  
 	  if(args.length==0){
 		  System.out.println("Name:Omkar Nalawade\nSEAS Login:omkarn");
 		  return;
 	  }
-	  if(args.length!=2){
+	  if(!(args.length==2)){
 		  System.out.println("Incorrect Arguments");
 		  return;  
 	  }
+	  
+	  if(args.length==2){
 	  try{
 		  portNumber = Integer.valueOf(args[0]);
-		  
 		  rootDirectory = args[1].trim();
 		  if(rootDirectory.endsWith("/")){
 			  rootDirectory = rootDirectory.substring(0,rootDirectory.length()-1);
@@ -48,34 +52,26 @@ public static void main(String args[])
 	  }
 	  catch(NumberFormatException e){
 		  System.out.println("Please enter a valid port Number");
-		  System.exit(1);
+		  return;
 	  }
 	  
-	  
-	  
-	  try {
-		server = new ServerSocket(portNumber);
-		//bQueue = new BlockingQueue();
-		threadPool = new ThreadPool(portNumber,rootDirectory,noOfThreads);
-		threadPool.executeThreadPool();
-		
-		//packetInfo = new PacketInformation(portNumber,rootDirectory,server);
-		
-		System.out.println("Listening for connection on port: "+portNumber);
-		while(threadPool.checkThreadPoolRunning()){
-			Socket sock = server.accept();
-			threadPool.add(sock);
-			//bQueue.enqueue(sock);
-		}
-		//server.close();
 	
-	} catch (InterruptedException e) {
-		// TODO Auto-generated catch block
-		System.out.println("Socket sock did not accept");
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		System.out.println("Server socket was not initialized");
-	}
-  }
-  
+		  try {
+			  server = new ServerSocket(portNumber);
+			  threadPool = new ThreadPool(portNumber,rootDirectory,noOfThreads);
+			  threadPool.executeThreadPool();
+			  System.out.println("Listening for connection on port: "+portNumber);
+			  while(threadPool.checkThreadPoolRunning()){
+				  Socket sock = server.accept();
+				  threadPool.add(sock);
+				  
+			  }
+		  } catch (InterruptedException e) {
+		  } catch (IOException e) {
+			  System.out.println("Kill the process id. Command is ps ax | grep HW1 ");
+		  }
+	  }
+  	}
+	
 }
+  

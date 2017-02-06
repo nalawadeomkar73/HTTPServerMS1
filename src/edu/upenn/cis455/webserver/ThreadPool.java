@@ -2,7 +2,7 @@ package edu.upenn.cis455.webserver;
 
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.List;
+
 
 public class ThreadPool {
 	
@@ -29,7 +29,6 @@ public class ThreadPool {
 	
 	public void executeThreadPool() {
 		
-		// TODO Auto-generated method stub
 		for(int i=0;i<noOfThreads;i++){
 			threadPool.add(new WorkerThread(i,rootDirectory,this,bQueue));
 			listOfThreads.add(threadPool.get(i));
@@ -77,12 +76,10 @@ public class ThreadPool {
 	}
 
 	public void add(Socket sock) throws InterruptedException {
-		// TODO Auto-generated method stub
 		bQueue.enqueue(sock);
 	}
 
 	public void setRunningStatus(boolean b) {
-		// TODO Auto-generated method stub
 		this.isRunning = b;
 		
 	}

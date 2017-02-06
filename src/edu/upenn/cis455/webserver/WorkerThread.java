@@ -31,7 +31,7 @@ public class WorkerThread extends Thread{
 	
 
 	public WorkerThread(int threadId, String rootDirectory, ThreadPool threadPool, BlockingQueue bq) {
-		// TODO Auto-generated constructor stub
+
 		this.threadId = threadId;
 		this.rootDirectory = rootDirectory;
 		this.threadPool = threadPool;
@@ -50,8 +50,6 @@ public class WorkerThread extends Thread{
 			InputStreamReader mySockInputReader = new InputStreamReader(mySockInput);
 			BufferedReader inputData = new BufferedReader(mySockInputReader);
 			requestHttp = reqParser(inputData);
-			
-			
 			if(requestHttp == null){
 				System.out.println("Invalid HTTP Request");
 				outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
@@ -103,18 +101,15 @@ public class WorkerThread extends Thread{
 									try {
 										dateWhenModified.setTime(requestHttp.getParserMap().containsKey("if-modified-since")?HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-modified-since")):HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-unmodified-since")));
 									} catch (ParseException e) {
-									// TODO Auto-generated catch block
+									
 										outtoClient.write(HTTPHandler.get500StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 									}
 									if(requestHttp.getParserMap().containsKey("if-unmodified-since")){
 										if(dateWhenFileModified.after(dateWhenModified)){
-										//requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
-										//responseHttp = new ResponseMessage(contentOutput, "412", HTTPHandler.getHttpResponseMessages().get("412"), requestHttpMessages);
 											outtoClient.write(HTTPHandler.get412StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 										}
 										else{
 											contentOutput = new String(bytesArray);
-										
 											requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
 											requestHttpMessages.put("Content-Length",""+contentOutput.length());
 											requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
@@ -196,7 +191,6 @@ public class WorkerThread extends Thread{
 							try {
 								dateWhenModified.setTime(requestHttp.getParserMap().containsKey("if-modified-since")?HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-modified-since")):HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-unmodified-since")));
 							} catch (ParseException e) {
-							// TODO Auto-generated catch block
 								outtoClient.write(HTTPHandler.get500StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 							}
 							if(requestHttp.getParserMap().containsKey("if-unmodified-since")){
@@ -404,6 +398,8 @@ public class WorkerThread extends Thread{
 				}
 				
 			}
+			
+			}	
 			inputData.close();
 			mySockInputReader.close();
 			mySockInput.close();
@@ -411,14 +407,10 @@ public class WorkerThread extends Thread{
 			outtoClient.close();
 			mySock.close();	
 			
-			}	
-			
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			System.out.println("Dequeuing not works from the blocking queue");
+			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			System.out.println("Outputstream did not work");
+			
 		} catch (NullPointerException e){
 		}
 	}
@@ -434,7 +426,7 @@ public class WorkerThread extends Thread{
 				readInputData.append(input + "\n");
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			
 			System.out.println("Nothing to read from the BufferedReader");
 		}
 		RequestData reqHTTP = null;
@@ -447,8 +439,6 @@ public class WorkerThread extends Thread{
 	
 	public String getRequiredPath(String path) {
 	    Stack<String> stack = new Stack<String>();
-	 
-	    //stack.push(path.substring(0,1));
 	 
 	    while(path.length()> 0 && path.charAt(path.length()-1) =='/'){
 	        path = path.substring(0, path.length()-1);
@@ -470,7 +460,7 @@ public class WorkerThread extends Thread{
 	        String top = stack.pop();
 	 
 	        if(top.equals("/.") || top.equals("/")){
-	            //nothing
+	           
 	        }else if(top.equals("/..")){
 	            back++;
 	        }else{
@@ -481,8 +471,6 @@ public class WorkerThread extends Thread{
 	            }
 	        }
 	    }
-	 
-	    //if empty, return "/"
 	    if(result.isEmpty()){
 	        return "/";
 	    }
