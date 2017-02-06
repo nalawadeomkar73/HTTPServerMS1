@@ -67,7 +67,7 @@ public static void main(String args[])
 			threadPool.add(sock);
 			//bQueue.enqueue(sock);
 		}
-		server.close();
+		//server.close();
 	
 	} catch (InterruptedException e) {
 		// TODO Auto-generated catch block

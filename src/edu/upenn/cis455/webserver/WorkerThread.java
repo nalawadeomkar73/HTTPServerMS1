@@ -13,7 +13,9 @@ import java.text.ParseException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Stack;
 
 public class WorkerThread extends Thread{
 	
@@ -24,8 +26,8 @@ public class WorkerThread extends Thread{
 	private ThreadPool threadPool;
 	private BlockingQueue bq;
 	private Socket mySock;
-	//private boolean isShutdown;
-	//private int ThreadPool.count;
+	private String hrefPath;
+	
 	
 
 	public WorkerThread(int threadId, String rootDirectory, ThreadPool threadPool, BlockingQueue bq) {
@@ -35,8 +37,8 @@ public class WorkerThread extends Thread{
 		this.threadPool = threadPool;
 		this.bq = bq;
 		this.mySock = new Socket();
-		//this.requestHttp = null;
-		//this.responseHttp = null;
+		this.requestHttp = null;
+		this.responseHttp = null;
 	}
 	
 	public void run(){
@@ -60,14 +62,21 @@ public class WorkerThread extends Thread{
 			}
 			
 			else{
-				if(requestHttp.getParserMap().containsKey("expect")){
+				String absolutePath = rootDirectory+requestHttp.getFilePath();
+				hrefPath = requestHttp.getFilePath();
+				String finalPath = getRequiredPath(absolutePath);
+				if(!finalPath.startsWith(rootDirectory)){
+					outtoClient.write(HTTPHandler.get403StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+				}
+				else if(requestHttp.getParserMap().containsKey("expect")){
 					outtoClient.write(HTTPHandler.get100StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+					
 				}
-				if(requestHttp.getFilePath().contains("http://localhost:"+threadPool.getPortNumber())){
-					String newFilePath = requestHttp.getFilePath().substring(("http://localhost:"+threadPool.getPortNumber()).length());
-					requestHttp.setFilePath(newFilePath);
-				}
-				File fp = new File(rootDirectory.concat(requestHttp.getFilePath()));
+				else{
+				
+				
+				requestHttp.setFilePath(finalPath);
+				File fp = new File(requestHttp.getFilePath());
 				String contentOutput ="";
 				Map<String,String> requestHttpMessages = new HashMap<String,String>();
 				if(fp.exists()){
@@ -187,13 +196,14 @@ public class WorkerThread extends Thread{
 						
 						StringBuilder filesInfo = new StringBuilder();
 						filesInfo.append(htmlStart);
-						filesInfo.append(requestHttp.getFilePath());
+						filesInfo.append(hrefPath);
 					
 						filesInfo.append("<br/>");
 						for(File file:allFiles){
 							if(!file.getName().endsWith("~")){
-								filesInfo.append("<a href=\"http://localhost:"+threadPool.getPortNumber()+requestHttp.getFilePath()+"/"+file.getName()+"\">"+file.getName()+"</a><br/>");	
-								//System.out.println("Omkar");
+								
+								filesInfo.append("<a href=\"http://localhost:"+threadPool.getPortNumber()+hrefPath+"/"+file.getName()+"\">"+file.getName()+"</a><br/>");	
+								
 							}
 							
 						}
@@ -221,7 +231,7 @@ public class WorkerThread extends Thread{
 						outtoClient.write(HTTPHandler.get404StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 					}
 				}else{
-					if(requestHttp.getFilePath().equalsIgnoreCase("/control")){
+					if(hrefPath.equalsIgnoreCase("/control")){
 						StringBuilder controlOutput = new StringBuilder();
 						controlOutput.append("<html><body><br/>Total Worker Threads: "+threadPool.getListOfThreads().size()+"<br/>");
 						controlOutput.append("Busy Threads: "+(threadPool.getListOfThreads().size()-threadPool.getThreadPool().size())+"<br/>");
@@ -230,7 +240,7 @@ public class WorkerThread extends Thread{
 						controlOutput.append("<br/>All Worker Threads: <br/>");
 						for (WorkerThread worker : threadPool.getListOfThreads()){
 							if(worker.getState().equals(Thread.State.RUNNABLE)){
-								controlOutput.append(worker.threadId+" "+worker.requestHttp.getFilePath()+"<br/>");
+								controlOutput.append(worker.threadId+" "+worker.hrefPath+"<br/>");
 							}else{
 								controlOutput.append(worker.threadId+" "+worker.getState()+"<br/>");
 							}
@@ -256,13 +266,15 @@ public class WorkerThread extends Thread{
 							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
 						}
 						
-					}else if(requestHttp.getFilePath().equalsIgnoreCase("/shutdown")){
+					}else if(hrefPath.equalsIgnoreCase("/shutdown")){
 						threadPool.setRunningStatus(false);
+						
 						for (WorkerThread worker : threadPool.getListOfThreads()){
 							worker.interrupt();
 						}
 						ShutdownThread sd = new ShutdownThread(threadPool);
 						sd.start();
+						
 						//spawn a new thread
 						requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
 						requestHttpMessages.put("Content-Length",""+contentOutput.length());
@@ -295,7 +307,7 @@ public class WorkerThread extends Thread{
 			outtoClient.close();
 			mySock.close();	
 			
-			
+			}	
 			
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -303,6 +315,7 @@ public class WorkerThread extends Thread{
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.out.println("Outputstream did not work");
+		} catch (NullPointerException e){
 		}
 	}
 		ThreadPool.count++;
@@ -310,7 +323,6 @@ public class WorkerThread extends Thread{
 	
 
 	private RequestData reqParser(BufferedReader inputData) {
-		// TODO Auto-generated method stub
 		StringBuilder readInputData = new StringBuilder();
 		String input = "";
 		try {
@@ -327,6 +339,57 @@ public class WorkerThread extends Thread{
 			
 		}
 		return reqHTTP;
+	}
+	
+	public String getRequiredPath(String path) {
+	    Stack<String> stack = new Stack<String>();
+	 
+	    //stack.push(path.substring(0,1));
+	 
+	    while(path.length()> 0 && path.charAt(path.length()-1) =='/'){
+	        path = path.substring(0, path.length()-1);
+	    }
+	 
+	    int start = 0;
+	    for(int i=1; i<path.length(); i++){
+	        if(path.charAt(i) == '/'){
+	            stack.push(path.substring(start, i));
+	            start = i;
+	        }else if(i==path.length()-1){
+	            stack.push(path.substring(start));
+	        }
+	    }
+	 
+	    LinkedList<String> result = new LinkedList<String>();
+	    int back = 0;
+	    while(!stack.isEmpty()){
+	        String top = stack.pop();
+	 
+	        if(top.equals("/.") || top.equals("/")){
+	            //nothing
+	        }else if(top.equals("/..")){
+	            back++;
+	        }else{
+	            if(back > 0){
+	                back--;
+	            }else{
+	                result.push(top);
+	            }
+	        }
+	    }
+	 
+	    //if empty, return "/"
+	    if(result.isEmpty()){
+	        return "/";
+	    }
+	 
+	    StringBuilder sb = new StringBuilder();
+	    while(!result.isEmpty()){
+	        String s = result.pop();
+	        sb.append(s);
+	    }
+	 
+	    return sb.toString();
 	}
 
 	
