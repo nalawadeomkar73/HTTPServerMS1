@@ -1,4 +1,4 @@
-Spackage edu.upenn.cis455.webserver;
+package edu.upenn.cis455.webserver;
 
 import java.net.Socket;
 import java.util.ArrayList;

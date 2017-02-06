@@ -189,7 +189,110 @@ public class WorkerThread extends Thread{
 					}
 					}
 					else if(fp.isDirectory()){
-						
+						if((requestHttp.getParserMap().containsKey("if-modified-since"))||(requestHttp.getParserMap().containsKey("if-unmodified-since"))){
+							Calendar dateWhenModified = new GregorianCalendar();
+							Calendar dateWhenFileModified = new GregorianCalendar();
+							dateWhenFileModified.setTimeInMillis(fp.lastModified());
+							try {
+								dateWhenModified.setTime(requestHttp.getParserMap().containsKey("if-modified-since")?HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-modified-since")):HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-unmodified-since")));
+							} catch (ParseException e) {
+							// TODO Auto-generated catch block
+								outtoClient.write(HTTPHandler.get500StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+							}
+							if(requestHttp.getParserMap().containsKey("if-unmodified-since")){
+								if(dateWhenFileModified.after(dateWhenModified)){
+								
+									outtoClient.write(HTTPHandler.get412StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+								}
+								else{
+									File[] allFiles = fp.listFiles();
+									String htmlStart = "<html><body>";
+									String htmlEnd = "</body></html>";
+									
+									StringBuilder filesInfo = new StringBuilder();
+									filesInfo.append(htmlStart);
+									filesInfo.append(hrefPath);
+								
+									filesInfo.append("<br/>");
+									for(File file:allFiles){
+										if(!file.getName().endsWith("~")){
+											
+											filesInfo.append("<a href=\"http://localhost:"+threadPool.getPortNumber()+hrefPath+"/"+file.getName()+"\">"+file.getName()+"</a><br/>");	
+											
+										}
+										
+									}
+									filesInfo.append(htmlEnd);
+									contentOutput = filesInfo.toString();
+									requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+									requestHttpMessages.put("Content-Length",""+contentOutput.length());
+									requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
+									requestHttpMessages.put("Connection", "Close");
+									requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+									responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
+									if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
+										outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()).getBytes());
+									}
+									else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
+										outtoClient.write(responseHttp.giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+									}
+									else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
+										outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+									}
+									else{
+										outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+									}
+								}	
+							}
+							
+							if(requestHttp.getParserMap().containsKey("if-modified-since")){
+								if(!dateWhenFileModified.after(dateWhenModified)){
+								
+									outtoClient.write(HTTPHandler.get304StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+								}
+								else{
+									File[] allFiles = fp.listFiles();
+									String htmlStart = "<html><body>";
+									String htmlEnd = "</body></html>";
+									
+									StringBuilder filesInfo = new StringBuilder();
+									filesInfo.append(htmlStart);
+									filesInfo.append(hrefPath);
+								
+									filesInfo.append("<br/>");
+									for(File file:allFiles){
+										if(!file.getName().endsWith("~")){
+											
+											filesInfo.append("<a href=\"http://localhost:"+threadPool.getPortNumber()+hrefPath+"/"+file.getName()+"\">"+file.getName()+"</a><br/>");	
+											
+										}
+										
+									}
+									filesInfo.append(htmlEnd);
+									contentOutput = filesInfo.toString();
+									requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+									requestHttpMessages.put("Content-Length",""+contentOutput.length());
+									requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
+									requestHttpMessages.put("Connection", "Close");
+									requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+									responseHttp = new ResponseMessage(contentOutput, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
+									if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
+										outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()).getBytes());
+									}
+									else if(requestHttp.getMethodName().equalsIgnoreCase("GET")){
+										outtoClient.write(responseHttp.giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+									}
+									else if((requestHttp.getMethodName().equalsIgnoreCase("POST"))||(requestHttp.getMethodName().equalsIgnoreCase("PUT"))||(requestHttp.getMethodName().equalsIgnoreCase("TRACE"))||(requestHttp.getMethodName().equalsIgnoreCase("DELETE"))){
+										outtoClient.write(HTTPHandler.get405StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+									}
+									else{
+										outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+									}
+								}
+							}
+							
+						}
+						else{
 						File[] allFiles = fp.listFiles();
 						String htmlStart = "<html><body>";
 						String htmlEnd = "</body></html>";
@@ -226,6 +329,7 @@ public class WorkerThread extends Thread{
 						}
 						else{
 							outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
+						}
 						}
 					}else{
 						outtoClient.write(HTTPHandler.get404StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()).getBytes());
