@@ -61,12 +61,14 @@ public static void main(String args[])
 			  threadPool = new ThreadPool(portNumber,rootDirectory,noOfThreads);
 			  threadPool.executeThreadPool();
 			  System.out.println("Listening for connection on port: "+portNumber);
-			  while(threadPool.checkThreadPoolRunning()){
+			  while(true){
 				  Socket sock = server.accept();
 				  threadPool.add(sock);
 				  
 			  }
+			
 		  } catch (InterruptedException e) {
+			  System.out.println("I am here");
 		  } catch (IOException e) {
 			  System.out.println("Kill the process id. Command is ps ax | grep HW1 ");
 		  }
