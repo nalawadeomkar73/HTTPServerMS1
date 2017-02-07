@@ -28,7 +28,7 @@ public class HTTPHandler {
 	static{
 		datePattern = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
 		datePattern1 = new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss z");
-		datePattern2 = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy z");
+		datePattern2 = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
 		datePattern.setTimeZone(TimeZone.getTimeZone("GMT"));
 		headerErrorMessages = new HashMap<String,String>();
 		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
@@ -94,7 +94,7 @@ public class HTTPHandler {
 	}
 	
 	public static SimpleDateFormat dateFormat2(){
-		datePattern2.setTimeZone(TimeZone.getTimeZone("GMT"));
+		//datePattern2.setTimeZone(TimeZone.getTimeZone("GMT"));
 		return datePattern2;
 	}
 	

@@ -1,9 +1,9 @@
 package edu.upenn.cis455.webserver;
 
-import java.io.BufferedReader;
+
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -14,7 +14,13 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
 import java.util.Iterator;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+
 
 class HttpServer {
   
@@ -23,6 +29,7 @@ class HttpServer {
   protected static ServerSocket server;
   private static ThreadPool threadPool;
   private static final int noOfThreads = 50;
+  private static boolean useEventDriven = false;
 
 public static void main(String args[])
 
@@ -36,7 +43,7 @@ public static void main(String args[])
 		  return;  
 	  }
 	  
-	  if(args.length==2){
+	  
 	  try{
 		  portNumber = Integer.valueOf(args[0]);
 		  rootDirectory = args[1].trim();
@@ -55,25 +62,85 @@ public static void main(String args[])
 		  return;
 	  }
 	  
-	
+	  if(!useEventDriven){
 		  try {
-			  server = new ServerSocket(portNumber);
 			  threadPool = new ThreadPool(portNumber,rootDirectory,noOfThreads);
 			  threadPool.executeThreadPool();
+			  server = new ServerSocket(portNumber);
 			  System.out.println("Listening for connection on port: "+portNumber);
-			  while(true){
-				  Socket sock = server.accept();
-				  threadPool.add(sock);
-				  
-			  }
-			
+				  while(true){
+					  Socket sock = server.accept();
+					  threadPool.add(sock);	  
+				  }  
 		  } catch (InterruptedException e) {
 			  System.out.println("I am here");
 		  } catch (IOException e) {
 			  System.out.println("Kill the process id. Command is ps ax | grep HW1 ");
 		  }
 	  }
-  	}
-	
+	  else{
+		  Selector selector = null;
+		  ServerSocketChannel server = null;
+		 
+		  try {
+			  selector = Selector.open();
+			
+			  server = ServerSocketChannel.open();
+			  server.socket().bind(new InetSocketAddress(portNumber));
+			  
+			  server.configureBlocking(false);
+			  server.register(selector, SelectionKey.OP_ACCEPT);
+		  }catch (IOException e) {
+					
+					System.out.println("Issue while starting the event driven server");
+		  }
+		  System.out.println("Listening for connection on port: "+portNumber);
+		  while(true){
+				  try {
+					 
+					while(selector.select()>0){
+					Iterator<SelectionKey> i = selector.selectedKeys().iterator(); 
+					while(i.hasNext()){
+						SelectionKey key = i.next(); 
+						if(key.isAcceptable()){
+							SocketChannel client = server.accept(); 
+							client.configureBlocking(false); 
+							client.socket().setTcpNoDelay(true); 
+							client.register(selector, SelectionKey.OP_READ);
+						}
+						else if(key.isReadable()){
+							CharsetDecoder charDec = Charset.forName("UTF-8").newDecoder();
+							SocketChannel sock = (SocketChannel)key.channel();
+							sock.configureBlocking(false);
+							java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocate(5000);
+							sock.read(buffer);
+							buffer.flip();
+							
+							CharBuffer decBUffer = charDec.decode(buffer);
+							
+							RequestData parseReq = new RequestData(decBUffer.toString());
+							java.nio.ByteBuffer bufferResponse = java.nio.ByteBuffer.wrap(EventDrivenMgr.getResponse(parseReq,rootDirectory,portNumber));
+							
+							sock.write(bufferResponse);
+							bufferResponse.clear();
+							sock.close();	
+						}
+						i.remove();
+					}
+					}
+				} catch (IOException e) {
+					
+				} 
+				catch(NullPointerException e){
+				}
+		  	}
+	  	}
+		  
+	 }
 }
+
+	
+
+	
+
   

@@ -11,6 +11,7 @@ public class ResponseMessage{
 	private Map<String,String> headerErrorMessages;
 	private ByteArrayOutputStream byteOutput=null;
 	private static final String commProtocol = "HTTP";
+	StringBuilder responseMsg=null;
 	//private static final String version_1 = "1.0";
 	//private static final String version_2 = "1.1";
 	
@@ -21,13 +22,15 @@ public class ResponseMessage{
 		this.errorStatus = errorStatus;
 		this.headerErrorMessages = headerErrorMessages;
 		this.byteOutput=new ByteArrayOutputStream();
+		this.responseMsg = new StringBuilder();
 	}
 	
 	public byte[] giveHttpResponse(String version){
 		
 		try
 		{
-			StringBuilder responseMsg = new StringBuilder();
+			responseMsg.delete(0, responseMsg.length());
+			byteOutput.reset();
 		responseMsg.append(commProtocol+"/"+version+" "+errorCode+" "+errorStatus+"\r\n");
 		if(headerErrorMessages!=null){
 			for(Map.Entry<String, String> entry : headerErrorMessages.entrySet()){
@@ -57,7 +60,8 @@ public class ResponseMessage{
 		// TODO Auto-generated method stub
 		try
 		{
-			StringBuilder responseMsg = new StringBuilder();
+			responseMsg.delete(0, responseMsg.length());
+			byteOutput.reset();
 		responseMsg.append(commProtocol+"/"+version+" "+errorCode+" "+errorStatus+"\r\n");
 		if(headerErrorMessages!=null){
 			for(Map.Entry<String, String> entry : headerErrorMessages.entrySet()){
@@ -71,10 +75,14 @@ public class ResponseMessage{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		responseGen();
 		return byteOutput.toByteArray();
 	}
 	
 	
-	
+	public void responseGen()
+	{
+		System.out.println(responseMsg.toString());
+	}
 	
 }
