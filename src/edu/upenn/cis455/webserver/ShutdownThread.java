@@ -15,15 +15,14 @@ public class ShutdownThread extends Thread{
 		
 		boolean cond=true;
 		while(cond){
-			//System.out.println("here");
+			
 		if(ThreadPool.count==50)
 			break;
 		else
 			try {
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				
 			}
 		}
 		

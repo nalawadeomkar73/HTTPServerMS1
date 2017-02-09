@@ -2,17 +2,22 @@ package edu.upenn.cis455.webserver;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Files;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Stack;
+import java.util.TimeZone;
 
 public class EventDrivenMgr {
 
 	private static String hrefEventPath;
 	private static ResponseMessage responseHttp;
+	@SuppressWarnings("null")
 	public static byte[] getResponse(RequestData requestHttp,String rootDirectory, int portNumber) {
 		byte[] responseMsg = null;
 		responseHttp = null;
@@ -59,6 +64,7 @@ public class EventDrivenMgr {
 				}
 
 				else if(fp.isFile()){
+					try{
 					FileInputStream inputStream = new FileInputStream(fp);
 					byte[] bytesArray = new byte[(int) fp.length()];
 					if(inputStream.read(bytesArray, 0, bytesArray.length)!=fp.length())
@@ -189,6 +195,9 @@ public class EventDrivenMgr {
 					
 				}
 					inputStream.close();
+				}catch(Exception e){
+					responseMsg=(HTTPHandler.get400StatusMessage().giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
+				}
 				}
 				else if(fp.isDirectory()){
 					if((requestHttp.getParserMap().containsKey("if-modified-since"))||(requestHttp.getParserMap().containsKey("if-unmodified-since"))){
@@ -410,8 +419,8 @@ public class EventDrivenMgr {
 					}
 					
 				}else if(hrefEventPath.equalsIgnoreCase("/shutdown")){
-					threadPool.setRunningStatus(false);
-					
+					//threadPool.setRunningStatus(false);
+					HttpServer.isNotShutdown = false;
 					
 					//spawn a new thread
 					requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
@@ -436,15 +445,104 @@ public class EventDrivenMgr {
 					responseMsg=(HTTPHandler.get404StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()));
 				}
 			}
-			}	
+		}	
 	
+	}
+	return responseMsg;
+}
+	private static String getEventRequiredPath(String path) {
+		Stack<String> stack = new Stack<String>();
+		 
+	    while(path.length()> 0 && path.charAt(path.length()-1) =='/'){
+	        path = path.substring(0, path.length()-1);
+	    }
+	 
+	    int start = 0;
+	    for(int i=1; i<path.length(); i++){
+	        if(path.charAt(i) == '/'){
+	            stack.push(path.substring(start, i));
+	            start = i;
+	        }else if(i==path.length()-1){
+	            stack.push(path.substring(start));
+	        }
+	    }
+	 
+	    LinkedList<String> result = new LinkedList<String>();
+	    int back = 0;
+	    while(!stack.isEmpty()){
+	        String top = stack.pop();
+	 
+	        if(top.equals("/.") || top.equals("/")){
+	           
+	        }else if(top.equals("/..")){
+	            back++;
+	        }else{
+	            if(back > 0){
+	                back--;
+	            }else{
+	                result.push(top);
+	            }
+	        }
+	    }
+	    if(result.isEmpty()){
+	        return "/";
+	    }
+	 
+	    StringBuilder sb = new StringBuilder();
+	    while(!result.isEmpty()){
+	        String s = result.pop();
+	        sb.append(s);
+	    }
+	 
+	    return sb.toString();
+	}
+	private static Calendar parseEventDateMethod(String dateWhenFileModified) {
+		Calendar cd = new GregorianCalendar();
+		Date d1 = null;
+		String formats[] = {"EEE, dd MMM yyyy HH:mm:ss z","EEEE, dd-MMM-yy HH:mm:ss z","EEE MMM dd HH:mm:ss yyyy"};
+		SimpleDateFormat sd = null;
+		try{
+			sd = new SimpleDateFormat(formats[0]);
+			sd.setTimeZone(TimeZone.getTimeZone("GMT"));
+			d1 = sd.parse(dateWhenFileModified);
+			
 		}
-	} catch (InterruptedException e) {
+		catch(Exception e){
+			
+		}
+		if(d1!=null){
+			cd.setTime(d1);
+			return cd;
+		}
 		
-	} catch (IOException e) {
-		
-	} catch (NullPointerException e){
-	} 
+		try{
+			sd = new SimpleDateFormat(formats[1]);
+			sd.setTimeZone(TimeZone.getTimeZone("GMT"));
+			d1 = sd.parse(dateWhenFileModified);
+			
+		}
+		catch(Exception e){
+			
+		}
+		if(d1!=null){
+			cd.setTime(d1);
+			return cd;
+		}
+		try{
+			sd = new SimpleDateFormat(formats[2]);
+			sd.setTimeZone(TimeZone.getTimeZone("GMT"));
+			d1 = sd.parse(dateWhenFileModified);
+			
+		}
+		catch(Exception e){
+			
+		}
+		if(d1!=null){
+			cd.setTime(d1);
+			return cd;
+		}
+		return null;
+	}
 }
 
 

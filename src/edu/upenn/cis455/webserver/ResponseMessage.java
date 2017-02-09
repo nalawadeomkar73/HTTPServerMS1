@@ -32,6 +32,7 @@ public class ResponseMessage{
 			responseMsg.delete(0, responseMsg.length());
 			byteOutput.reset();
 		responseMsg.append(commProtocol+"/"+version+" "+errorCode+" "+errorStatus+"\r\n");
+		
 		if(headerErrorMessages!=null){
 			for(Map.Entry<String, String> entry : headerErrorMessages.entrySet()){
 				responseMsg.append(entry.getKey()+":"+entry.getValue()+"\r\n");

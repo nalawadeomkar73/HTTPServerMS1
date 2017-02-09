@@ -9,8 +9,12 @@ Did you complete any extra-credit tasks? If so, which ones?
 
 Any special instructions for building and running your solution?
   For event driven implementation, I have declared a boolean useEventDrvien in the
-  HTTPServer class which has to be set to to true. This will run the event driven implementation
+  HTTPServer class which has to be set to true. This will run the event driven implementation
   and when useEventDriven is false it will run the normal HTTPServer implementation.
+  Also it works perfectly from the browser but in telnet while entering the request it has to be
+  entered as one complete request. 
+ 
+  
 
 Did you personally write _all_ the code you are submitting
 (other than code from the course web page)?

@@ -1,25 +1,20 @@
 package edu.upenn.cis455.webserver;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 import java.util.TimeZone;
@@ -58,15 +53,14 @@ public class WorkerThread extends Thread{
 			BufferedReader inputData = new BufferedReader(mySockInputReader);
 			requestHttp = reqParser(inputData);
 			if(requestHttp == null){
-				System.out.println("Invalid HTTP Request");
+				
 				outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
 			}
 			
 			else if(!requestHttp.isCorrectMessage()){
-				System.out.println("Invalid HTTP Request with wrong input message");
-				String k="karthik";
+				
 				outtoClient.write(HTTPHandler.get400StatusMessage().giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
-				//outtoClient.write(k.getBytes());
+				
 			}
 			
 			else{
@@ -78,7 +72,8 @@ public class WorkerThread extends Thread{
 				
 				if((requestHttp.getParserMap().containsKey("expect"))&&(requestHttp.getVersionNumber().equals("1.1"))){
 					if(requestHttp.getParserMap().get("expect").equals("100-continue")){
-						outtoClient.write(HTTPHandler.get100StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()));
+						String output = new String(("HTTP"+"/"+requestHttp.getVersionNumber()+" "+"100"+" "+"Continue"+"\r\n"+"\r\n"));
+						outtoClient.write(output.getBytes());
 					}
 				}
 				String absolutePath = rootDirectory+requestHttp.getFilePath();

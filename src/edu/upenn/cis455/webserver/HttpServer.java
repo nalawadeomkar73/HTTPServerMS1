@@ -1,12 +1,18 @@
 package edu.upenn.cis455.webserver;
+/*References for Eventdriven:
+ * http://www.programcreek.com/java-api-examples/java.nio.channels.SocketChannel
+ * https://examples.javacodegeeks.com/core-java/nio/channels/selector-channels/java-nio-channels-selector-example/
+ */
 
-
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -14,12 +20,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.security.KeyStore;
-import java.security.cert.Certificate;
 import java.util.Iterator;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
 
 
 class HttpServer {
@@ -29,7 +31,8 @@ class HttpServer {
   protected static ServerSocket server;
   private static ThreadPool threadPool;
   private static final int noOfThreads = 50;
-  private static boolean useEventDriven = false;
+  private static boolean useEventDriven = true;
+  public static boolean isNotShutdown;
 
 public static void main(String args[])
 
@@ -81,6 +84,7 @@ public static void main(String args[])
 	  else{
 		  Selector selector = null;
 		  ServerSocketChannel server = null;
+		  isNotShutdown = true;
 		 
 		  try {
 			  selector = Selector.open();
@@ -95,7 +99,7 @@ public static void main(String args[])
 					System.out.println("Issue while starting the event driven server");
 		  }
 		  System.out.println("Listening for connection on port: "+portNumber);
-		  while(true){
+		  while(isNotShutdown){
 				  try {
 					 
 					while(selector.select()>0){
@@ -109,21 +113,27 @@ public static void main(String args[])
 							client.register(selector, SelectionKey.OP_READ);
 						}
 						else if(key.isReadable()){
-							CharsetDecoder charDec = Charset.forName("UTF-8").newDecoder();
 							SocketChannel sock = (SocketChannel)key.channel();
 							sock.configureBlocking(false);
+							
 							java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocate(5000);
+							
 							sock.read(buffer);
+							String output = new String(buffer.array()).trim();
 							buffer.flip();
 							
-							CharBuffer decBUffer = charDec.decode(buffer);
-							
-							RequestData parseReq = new RequestData(decBUffer.toString());
+	
+							System.out.println("Request is:\n"+output);
+							RequestData parseReq = new RequestData(output+"\r\n");
 							java.nio.ByteBuffer bufferResponse = java.nio.ByteBuffer.wrap(EventDrivenMgr.getResponse(parseReq,rootDirectory,portNumber));
 							
 							sock.write(bufferResponse);
 							bufferResponse.clear();
-							sock.close();	
+							sock.close();
+							if(isNotShutdown==false){
+								System.exit(1);
+							}
+							
 						}
 						i.remove();
 					}
