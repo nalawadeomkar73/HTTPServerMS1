@@ -32,7 +32,6 @@ public class HTTPHandler {
 		datePattern.setTimeZone(TimeZone.getTimeZone("GMT"));
 		headerErrorMessages = new HashMap<String,String>();
 		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-		
 		headerErrorMessages.put("Connection", "Close");
 		httpResponseMessages = new HashMap<String,String>();
 		httpResponseMessages.put("100", "CONTINUE");
@@ -46,7 +45,7 @@ public class HTTPHandler {
 		httpResponseMessages.put("405", "METHOD NOT ALLOWED");
 		httpResponseMessages.put("412", "PRECONDITION FAILED");
 		httpResponseMessages.put("500", "SERVER ERROR");
-		httpResponseMessages.put("POST", "COMMAND IS NOT SUPPORTED");
+		httpResponseMessages.put("POST","COMMAND IS NOT SUPPORTED");
 		httpResponseMessages.put("PUT", "COMMAND IS NOT SUPPORTED");
 		
 		String errorOutput = "<html><body>"+"100"+" : "+httpResponseMessages.get("100")+"</body></html>\r\n";

@@ -18,6 +18,9 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Stack;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
+
+import org.apache.tools.ant.taskdefs.condition.Http;
 
 public class WorkerThread extends Thread{
 	
@@ -86,6 +89,39 @@ public class WorkerThread extends Thread{
 				else{
 				
 				requestHttp.setFilePath(finalPath);
+				
+				if(HttpServer.getURLMap()!= null){
+					int longestLength = -1;
+					String urlMatch = "";
+					for(Map.Entry<String, String> entry : HttpServer.getURLMap().entrySet()){
+						String fpath;
+						Pattern url = Pattern.compile(entry.getKey());
+						if(requestHttp.getFilePath().contains("?")){
+							fpath = requestHttp.getFilePath().split("\\?")[0];
+						}
+						else{
+							fpath = requestHttp.getFilePath();
+						}
+						if(url.matcher(fpath).matches())
+						{
+							int actLen = entry.getKey().contains("*")?entry.getKey().indexOf("*")-1:entry.getKey().length();
+							if(actLen>longestLength)
+							{
+								longestLength = actLen;
+								urlMatch = entry.getKey();
+							}
+						}
+					}
+				
+				
+				if(HttpServer.getURLMap().containsKey(urlMatch)){
+					String servlet = HttpServer.getURLMap().get(urlMatch);
+					if(HttpServer.getServletMap().containsKey(servlet)){
+						
+					}
+					
+				}
+				}
 				File fp = new File(requestHttp.getFilePath());
 				String contentOutput ="";
 				Map<String,String> requestHttpMessages = new HashMap<String,String>();
@@ -231,8 +267,7 @@ public class WorkerThread extends Thread{
 							Calendar dateWhenModified = new GregorianCalendar();
 							Calendar dateWhenFileModified = new GregorianCalendar();
 							dateWhenFileModified.setTimeInMillis(fp.lastModified());
-						//	dateWhenModified.setTime(requestHttp.getParserMap().containsKey("if-modified-since")?HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-modified-since")):HTTPHandler.dateFormat().parse(requestHttp.getParserMap().get("if-unmodified-since")));
-							
+						
 							if(requestHttp.getParserMap().containsKey("if-modified-since")){
 								dateWhenModified =  parseDateMethod(requestHttp.getParserMap().get("if-modified-since"));
 							}
@@ -565,7 +600,7 @@ public class WorkerThread extends Thread{
 		
 	}
 
-	private RequestData reqParser(BufferedReader inputData) {
+	private RequestData reqParser(BufferedReader inputData) throws IOException {
 		StringBuilder readInputData = new StringBuilder();
 		String input = "";
 		try {
@@ -573,12 +608,21 @@ public class WorkerThread extends Thread{
 				readInputData.append(input + "\n");
 			}
 		} catch (IOException e) {
-			
-			System.out.println("Nothing to read from the BufferedReader");
 		}
 		RequestData reqHTTP = null;
 		if(readInputData!=null){
 			reqHTTP = new RequestData(readInputData.toString());
+			if(reqHTTP.getMethodName().equals("POST")){
+				if(reqHTTP.getParserMap().containsKey("content-length")){
+					int contentLen = Integer.valueOf(reqHTTP.getParserMap().get("content-length"));
+					char[] contentData = new char[contentLen];
+					if(inputData.read(contentData)== contentLen){
+						String contentBody = new String(contentData);
+						reqHTTP.setContentBody(contentBody);
+					}
+					
+				}
+			}
 			
 		}
 		return reqHTTP;

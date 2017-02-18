@@ -4,23 +4,28 @@ package edu.upenn.cis455.webserver;
  * https://examples.javacodegeeks.com/core-java/nio/channels/selector-channels/java-nio-channels-selector-example/
  */
 
-import java.io.BufferedReader;
+
+
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
+
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
+
+import java.util.HashMap;
 import java.util.Iterator;
+
+import javax.servlet.http.HttpServlet;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+
 
 
 
@@ -31,8 +36,15 @@ class HttpServer {
   protected static ServerSocket server;
   private static ThreadPool threadPool;
   private static final int noOfThreads = 50;
-  private static boolean useEventDriven = true;
+  private static boolean useEventDriven = false;
   public static boolean isNotShutdown;
+  private static File webxml;
+  private static 	Context context;
+  private static HashMap<String, String> urlPatterns;
+private static HashMap<String, Session> sessionMap;
+private static HashMap<String, HttpServlet> servlets;
+
+  
 
 public static void main(String args[])
 
@@ -41,24 +53,31 @@ public static void main(String args[])
 		  System.out.println("Name:Omkar Nalawade\nSEAS Login:omkarn");
 		  return;
 	  }
-	  if(!(args.length==2)){
+	  if(!(args.length==3)){
 		  System.out.println("Incorrect Arguments");
 		  return;  
 	  }
 	  
 	  
 	  try{
-		  portNumber = Integer.valueOf(args[0]);
+		  portNumber = Integer.valueOf(args[0]); 
+		  webxml = new File(args[2].trim());
 		  rootDirectory = args[1].trim();
 		  if(rootDirectory.endsWith("/")){
 			  rootDirectory = rootDirectory.substring(0,rootDirectory.length()-1);
 		  }
 		  
 		  if(!(new File(rootDirectory).exists())){
-			  System.out.println("Hello");
 			  System.out.println("Name:Omkar Nalawade\nSEAS Login:omkarn");
 			  return;
 		  }
+		  
+		  if(!(webxml.exists())){
+			  System.out.println("Name:Omkar Nalawade\nSEAS Login:omkarn");
+			  return;
+		  }
+		  
+		  
 	  }
 	  catch(NumberFormatException e){
 		  System.out.println("Please enter a valid port Number");
@@ -66,6 +85,18 @@ public static void main(String args[])
 	  }
 	  
 	  if(!useEventDriven){
+		  
+			try {
+				Handler h= parseWebdotxml(args[2]);
+				
+				context = createContext(h);
+				HashMap<String,HttpServlet> servlets = createServlets(h,context);
+				sessionMap = new HashMap<String, Session>();
+				urlPatterns = new HashMap<String, String>(h.urlPattern);
+					
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		  try {
 			  threadPool = new ThreadPool(portNumber,rootDirectory,noOfThreads);
 			  threadPool.executeThreadPool();
@@ -76,11 +107,12 @@ public static void main(String args[])
 					  threadPool.add(sock);	  
 				  }  
 		  } catch (InterruptedException e) {
-			  System.out.println("I am here");
+			  
 		  } catch (IOException e) {
 			  System.out.println("Kill the process id. Command is ps ax | grep HW1 ");
 		  }
 	  }
+	 
 	  else{
 		  Selector selector = null;
 		  ServerSocketChannel server = null;
@@ -147,6 +179,63 @@ public static void main(String args[])
 	  	}
 		  
 	 }
+
+
+private static Handler parseWebdotxml(String webdotxml) throws Exception {
+	Handler h = new Handler();
+	File file = new File(webdotxml);
+	if (file.exists() == false) {
+		System.err.println("error: cannot find " + file.getPath());
+		System.exit(-1);
+	}
+	SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
+	parser.parse(file, h);
+	
+	return h;
+}
+
+private static Context createContext(Handler h) {
+	Context fc = new Context();
+	for (String param : h.m_contextParams.keySet()) {
+		fc.setInitParam(param, h.m_contextParams.get(param));
+	}
+	return fc;
+}
+
+private static HashMap<String,HttpServlet> createServlets(Handler h, Context fc) throws Exception {
+	servlets = new HashMap<String,HttpServlet>();
+	for (String servletName : h.m_servlets.keySet()) {
+		Config config = new Config(servletName, fc);
+		String className = h.m_servlets.get(servletName);
+		Class servletClass = Class.forName(className);
+		HttpServlet servlet = (HttpServlet) servletClass.newInstance();
+		HashMap<String,String> servletParams = h.m_servletParams.get(servletName);
+		if (servletParams != null) {
+			for (String param : servletParams.keySet()) {
+				config.setInitParam(param, servletParams.get(param));
+			}
+		}
+		servlet.init(config);
+		servlets.put(servletName, servlet);
+	}
+	return servlets;
+}
+public static int  getPortNumber() {
+	// TODO Auto-generated method stub
+	return portNumber;
+}
+
+
+public static  HashMap<String, String> getURLMap() {
+	// TODO Auto-generated method stub
+	return urlPatterns;
+}
+
+
+public static  HashMap<String, HttpServlet> getServletMap() {
+	// TODO Auto-generated method stub
+	return servlets;
+}
 }
 
 	

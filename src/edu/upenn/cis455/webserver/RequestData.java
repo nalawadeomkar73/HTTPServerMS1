@@ -11,6 +11,7 @@ public class RequestData {
 	private String protocolName;
 	private String versionNumber;
 	private Map<String, String> parserMap;
+	private String contentBody;
 
 	public RequestData(String parseRequest) {
 		isCorrect = true;
@@ -99,6 +100,12 @@ public class RequestData {
 
 	public String getVersionNumber() {
 		return versionNumber;
+	}
+
+	public void setContentBody(String contentBody) {
+		// TODO Auto-generated method stub
+		this.contentBody = contentBody;
+		
 	}
 	
 

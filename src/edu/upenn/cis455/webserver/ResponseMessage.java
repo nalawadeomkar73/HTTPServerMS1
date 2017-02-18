@@ -76,7 +76,7 @@ public class ResponseMessage{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		responseGen();
+		//responseGen();
 		return byteOutput.toByteArray();
 	}
 	
