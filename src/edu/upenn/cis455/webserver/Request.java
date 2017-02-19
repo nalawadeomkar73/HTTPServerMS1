@@ -2,14 +2,22 @@ package edu.upenn.cis455.webserver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.security.Principal;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletInputStream;
@@ -20,9 +28,10 @@ import javax.servlet.http.HttpSession;
 
 class Request implements HttpServletRequest {
 
-	private Locale locale;
-	private ArrayList<Cookie> c;
+	
+	
 	//private Socket sock;
+	
 	Request() {
 	}
 	
@@ -46,8 +55,8 @@ class Request implements HttpServletRequest {
 	 */
 	public Cookie[] getCookies() {
 		// TODO Auto-generated method stub
-		Cookie[] cookieContent = c.toArray(new Cookie[c.size()]);
-		return cookieContent;
+		Cookie[] allCookies = cookiesFromHeaders.toArray(new Cookie[cookiesFromHeaders.size()]);
+		return allCookies;
 	}
 
 	/* (non-Javadoc)
@@ -56,10 +65,58 @@ class Request implements HttpServletRequest {
 	public long getDateHeader(String dateHeader) {
 		// TODO Auto-generated method stub
 		if(req.getParserMap().containsKey(dateHeader)){
-			String givenDate = req.getParserMap().get(dateHeader);
+			String givenDate = req.getParserMap().get(dateHeader).get(0);
+		
+			Calendar cd = new GregorianCalendar();
+			Date d1 = null;
+			String formats[] = {"EEE, dd MMM yyyy HH:mm:ss z","EEEE, dd-MMM-yy HH:mm:ss z","EEE MMM dd HH:mm:ss yyyy"};
+			SimpleDateFormat sd = null;
+			try{
+				sd = new SimpleDateFormat(formats[0]);
+				sd.setTimeZone(TimeZone.getTimeZone("GMT"));
+				d1 = sd.parse(givenDate);
 			
+			}
+			catch(Exception e){
+			
+			}
+			if(d1!=null){
+				cd.setTime(d1);
+				return cd.getTimeInMillis();
+			}
+		
+			try{
+				sd = new SimpleDateFormat(formats[1]);
+				sd.setTimeZone(TimeZone.getTimeZone("GMT"));
+				d1 = sd.parse(givenDate);
+			
+			}
+			catch(Exception e){
+			
+			}
+			if(d1!=null){
+				cd.setTime(d1);
+				return cd.getTimeInMillis();
+			}
+			try{
+				sd = new SimpleDateFormat(formats[2]);
+				sd.setTimeZone(TimeZone.getTimeZone("GMT"));
+				d1 = sd.parse(givenDate);
+			
+			}
+			catch(Exception e){
+			
+			}
+			if(d1!=null){
+				cd.setTime(d1);
+				return cd.getTimeInMillis();
+			}else{
+				throw new IllegalArgumentException("Date does not match");
+			}
+			
+		}else{
+			return -1;
 		}
-		return 0;
 	}
 
 	/* (non-Javadoc)
@@ -67,7 +124,11 @@ class Request implements HttpServletRequest {
 	 */
 	public String getHeader(String arg0) {
 		// TODO Auto-generated method stub
-		return null;
+		if(req.getParserMap().containsKey(arg0)){
+			return req.getParserMap().get(arg0).get(0);
+		}else{
+			return null;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -75,7 +136,11 @@ class Request implements HttpServletRequest {
 	 */
 	public Enumeration getHeaders(String arg0) {
 		// TODO Auto-generated method stub
-		return null;
+		if(req.getParserMap().containsKey(arg0)){
+			return Collections.enumeration(req.getParserMap().get(arg0));
+		}else{
+			return null;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -83,7 +148,15 @@ class Request implements HttpServletRequest {
 	 */
 	public Enumeration getHeaderNames() {
 		// TODO Auto-generated method stub
-		return null;
+		if(req.getParserMap()==null){
+			return null;
+		}else{
+			if(req.getParserMap().isEmpty()){
+				return Collections.emptyEnumeration();
+			}else{
+				return Collections.enumeration(req.getParserMap().keySet());
+			}
+		}
 	}
 
 	/* (non-Javadoc)
@@ -91,14 +164,18 @@ class Request implements HttpServletRequest {
 	 */
 	public int getIntHeader(String arg0) {
 		// TODO Auto-generated method stub
-		return 0;
+		if(req.getParserMap().containsKey(arg0)){
+			return Integer.parseInt(req.getParserMap().get(arg0).get(0));
+		}else{
+			return -1;
+		}
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServletRequest#getMethod()
 	 */
 	public String getMethod() {
-		return m_method;
+		return req.getMethodName();
 	}
 
 	/* (non-Javadoc)
@@ -106,7 +183,10 @@ class Request implements HttpServletRequest {
 	 */
 	public String getPathInfo() {
 		// TODO Auto-generated method stub
-		return null;
+		if(req.getDetails().isEmpty())
+			return null;
+		else
+			return req.getDetails();
 	}
 
 	/* (non-Javadoc)
@@ -122,7 +202,7 @@ class Request implements HttpServletRequest {
 	 */
 	public String getContextPath() {
 		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	/* (non-Javadoc)
@@ -130,7 +210,7 @@ class Request implements HttpServletRequest {
 	 */
 	public String getQueryString() {
 		// TODO Auto-generated method stub
-		return null;
+		return req.getUrlBody();
 	}
 
 	/* (non-Javadoc)
@@ -162,6 +242,12 @@ class Request implements HttpServletRequest {
 	 */
 	public String getRequestedSessionId() {
 		// TODO Auto-generated method stub
+		for(Cookie c : cookiesFromHeaders){
+			if(c.getName().equalsIgnoreCase("JSESSIONID"))
+			{
+				return c.getValue();
+			}
+		}
 		return null;
 	}
 
@@ -170,15 +256,22 @@ class Request implements HttpServletRequest {
 	 */
 	public String getRequestURI() {
 		// TODO Auto-generated method stub
-		return null;
+		if(req.getFilePath().contains("?")){
+			return req.getFilePath().split("\\?")[0];
+		}else{
+			return req.getFilePath();
+		}
+		//return null;
 	}
 
 	/* (non-Javadoc)
-	 * @see javax.servlet.http.HttpServletRequest#getRequestURL()
+	 * @see javax.servlet.http.HttpServletRequest#getRequestURL()ET
 	 */
 	public StringBuffer getRequestURL() {
 		// TODO Auto-generated method stub
-		return null;
+		StringBuffer requestURL = new StringBuffer();
+		requestURL.append("http://localhost:"+HttpServer.getPortNumber()+getRequestURI());
+		return requestURL;
 	}
 
 	/* (non-Javadoc)
@@ -186,7 +279,7 @@ class Request implements HttpServletRequest {
 	 */
 	public String getServletPath() {
 		// TODO Auto-generated method stub
-		return null;
+		return req.getfinalPath();
 	}
 
 	/* (non-Javadoc)
@@ -196,6 +289,10 @@ class Request implements HttpServletRequest {
 		if (arg0) {
 			if (! hasSession()) {
 				m_session = new Session();
+				synchronized(HttpServer.getSessionMap())
+				{
+					HttpServer.getSessionMap().put(m_session.getId(), m_session);
+				}
 			}
 		} else {
 			if (! hasSession()) {
@@ -217,7 +314,20 @@ class Request implements HttpServletRequest {
 	 */
 	public boolean isRequestedSessionIdValid() {
 		// TODO Auto-generated method stub
-		return false;
+		String sId = getRequestedSessionId();
+		synchronized(HttpServer.getSessionMap())
+		{
+			if(sId != null){
+				if(HttpServer.getSessionMap().containsKey(sId)){
+					if(HttpServer.getSessionMap().get(sId).isValid()){
+						return true;
+					}else{
+						return false;
+					}
+				}else return false;
+				
+			}else return false;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -225,7 +335,12 @@ class Request implements HttpServletRequest {
 	 */
 	public boolean isRequestedSessionIdFromCookie() {
 		// TODO Auto-generated method stub
-		return false;
+		String sId = getRequestedSessionId();
+		if(sId!=null){
+			return true;
+		}else{
+			return false;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -265,16 +380,16 @@ class Request implements HttpServletRequest {
 	 */
 	public String getCharacterEncoding() {
 		// TODO Auto-generated method stub
-		return null;
+		return encoding;
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletRequest#setCharacterEncoding(java.lang.String)
 	 */
-	public void setCharacterEncoding(String arg0)
+	public void setCharacterEncoding(String charEncoding)
 			throws UnsupportedEncodingException {
 		// TODO Auto-generated method stub
-
+		this.encoding = charEncoding;
 	}
 
 	/* (non-Javadoc)
@@ -282,7 +397,11 @@ class Request implements HttpServletRequest {
 	 */
 	public int getContentLength() {
 		// TODO Auto-generated method stub
-		return 0;
+		if(req.getParserMap().containsKey("content-length")){
+			return Integer.parseInt(req.getParserMap().get("content-length").get(0));
+		}else{
+			return -1;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -290,7 +409,11 @@ class Request implements HttpServletRequest {
 	 */
 	public String getContentType() {
 		// TODO Auto-generated method stub
-		return null;
+		if(req.getParserMap().containsKey("content-type")){
+			return req.getParserMap().get("content-key").get(0);
+		}else{
+			return null;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -305,14 +428,18 @@ class Request implements HttpServletRequest {
 	 * @see javax.servlet.ServletRequest#getParameter(java.lang.String)
 	 */
 	public String getParameter(String arg0) {
-		return m_params.getProperty(arg0);
+		if(propertiesMap.containsKey(arg0)){
+			return propertiesMap.get(arg0).get(0);
+		}else{
+			return null;
+		}
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletRequest#getParameterNames()
 	 */
 	public Enumeration getParameterNames() {
-		return m_params.keys();
+		return Collections.enumeration(propertiesMap.keySet());
 	}
 
 	/* (non-Javadoc)
@@ -320,7 +447,13 @@ class Request implements HttpServletRequest {
 	 */
 	public String[] getParameterValues(String arg0) {
 		// TODO Auto-generated method stub
-		return null;
+		if(propertiesMap.containsKey(arg0)){
+			String[] allParameters;
+			allParameters =  propertiesMap.get(arg0).toArray(new String[propertiesMap.get(arg0).size()]);
+			return allParameters;
+		}else{
+			return null;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -328,7 +461,7 @@ class Request implements HttpServletRequest {
 	 */
 	public Map getParameterMap() {
 		// TODO Auto-generated method stub
-		return null;
+		return propertiesMap;
 	}
 
 	/* (non-Javadoc)
@@ -336,7 +469,8 @@ class Request implements HttpServletRequest {
 	 */
 	public String getProtocol() {
 		// TODO Auto-generated method stub
-		return null;
+		return req.getProtocolName()+"/"+req.getVersionNumber();
+		
 	}
 
 	/* (non-Javadoc)
@@ -344,7 +478,7 @@ class Request implements HttpServletRequest {
 	 */
 	public String getScheme() {
 		// TODO Auto-generated method stub
-		return null;
+		return "http";
 	}
 
 	/* (non-Javadoc)
@@ -352,7 +486,16 @@ class Request implements HttpServletRequest {
 	 */
 	public String getServerName() {
 		// TODO Auto-generated method stub
-		return null;
+		if(req.getParserMap().containsKey("host")){
+			String hostValue = req.getParserMap().get("host").get(0);
+			if(hostValue.contains(":")){
+				return hostValue.split(":")[0];
+			}else{
+				return hostValue;
+			}
+		}else{
+			return HttpServer.server.getInetAddress().getHostAddress();
+		}
 	}
 
 	/* (non-Javadoc)
@@ -361,14 +504,14 @@ class Request implements HttpServletRequest {
 	public int getServerPort() {
 		// TODO Auto-generated method stub
 		if(req.getParserMap().containsKey("host")){
-			String value = req.getParserMap().get("host");
-			if(value.contains(":")){
-				return Integer.valueOf(value.split(":")[1]);
+			String hostValue = req.getParserMap().get("host").get(0);
+			if(hostValue.contains(":")){
+				return Integer.parseInt(hostValue.split(":")[1]);
 			}else{
-				return HttpServer.getPortNumber();
+				return HttpServer.server.getLocalPort();
 			}
 		}else{
-			return HttpServer.getPortNumber();
+			return HttpServer.server.getLocalPort();
 		}
 		
 	}
@@ -378,7 +521,8 @@ class Request implements HttpServletRequest {
 	 */
 	public BufferedReader getReader() throws IOException {
 		// TODO Auto-generated method stub
-		return null;
+		BufferedReader reader = new BufferedReader(new StringReader(req.getContentBody()));
+		return reader;
 	}
 
 	/* (non-Javadoc)
@@ -386,7 +530,8 @@ class Request implements HttpServletRequest {
 	 */
 	public String getRemoteAddr() {
 		// TODO Auto-generated method stub
-		return null;
+		return sock.getRemoteSocketAddress().toString();
+		
 	}
 
 	/* (non-Javadoc)
@@ -394,7 +539,7 @@ class Request implements HttpServletRequest {
 	 */
 	public String getRemoteHost() {
 		// TODO Auto-generated method stub
-		return null;
+		return sock.getInetAddress().getHostName();
 	}
 
 	/* (non-Javadoc)
@@ -489,14 +634,15 @@ class Request implements HttpServletRequest {
 	}
 	
 	void setParameter(String key, String value) {
-		if(m_params.containsKey(key)){
-			StringBuilder sb = new StringBuilder();
-			sb.append(m_params.getProperty(key));
-			sb.append(",");
-			sb.append(value);
-			m_params.setProperty(key, sb.toString());
-		}else{
-			m_params.setProperty(key, value);
+		if(propertiesMap.containsKey(key))
+		{
+			propertiesMap.get(key).add(value);
+		}
+		else
+		{
+			ArrayList<String> valueList = new ArrayList<String>();
+			valueList.add(value);
+			propertiesMap.put(key, valueList);
 		}
 	}
 	
@@ -516,4 +662,28 @@ class Request implements HttpServletRequest {
 	private Session m_session = null;
 	private String m_method;
 	private RequestData req;
+	private HashMap<String, ArrayList<String>> propertiesMap;
+	private ArrayList<Cookie> cookiesFromHeaders;
+	private Socket sock;
+	private String encoding = "ISO-8859-1";
+	private Locale locale;
+	public void setparameters(HashMap<String, ArrayList<String>> propertiesMap) {
+		// TODO Auto-generated method stub
+		this.propertiesMap = propertiesMap;
+	}
+
+	public void setCookies(ArrayList<Cookie> cookiesFromHeaders) {
+		// TODO Auto-generated method stub
+		this.cookiesFromHeaders = cookiesFromHeaders;
+	}
+
+	public void saveSession(Session session) {
+		// TODO Auto-generated method stub
+		this.m_session = session;
+	}
+
+	public void setSocket(Socket mySock) {
+		// TODO Auto-generated method stub
+		this.sock = mySock;
+	}
 }

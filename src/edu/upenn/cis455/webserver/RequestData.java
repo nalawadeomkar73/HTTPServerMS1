@@ -1,7 +1,12 @@
 package edu.upenn.cis455.webserver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.servlet.http.Cookie;
+
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
 
 public class RequestData {
 
@@ -10,12 +15,16 @@ public class RequestData {
 	private String filePath;
 	private String protocolName;
 	private String versionNumber;
-	private Map<String, String> parserMap;
+	private Map<String, ArrayList<String>> parserMap;
 	private String contentBody;
+	private String servletPath;
+	private String urlBody;
+	private String finalServletPath;
+	private String details;
 
 	public RequestData(String parseRequest) {
 		isCorrect = true;
-		parserMap = new HashMap<String,String>();
+		parserMap = new HashMap<String,ArrayList<String>>();
 		String[] parseRequestContent = parseRequest.split("\n");
 		String[] parserContent = parseRequestContent[0].trim().split(" ");
 		if(parserContent.length<3){
@@ -56,11 +65,15 @@ public class RequestData {
 				if(parseRequestContent[i].split(":").length>2){
 					contentValue = parseRequestContent[i].substring(parseRequestContent[i].indexOf(":")+1).trim();
 				}
-				parserMap.put(contentKey,contentValue);
-				for(String key:parserMap.keySet())
-				{
-					System.out.println(key);
+				if(parserMap.containsKey(contentKey)){
+					parserMap.get(contentKey).add(contentValue);
+				}else{
+					ArrayList<String> contentVal = new ArrayList<String>();
+					contentVal.add(contentValue);
+					parserMap.put(contentKey, contentVal);
 				}
+				
+				
 			}
 		}
 		
@@ -75,13 +88,26 @@ public class RequestData {
 		return "HttpRequest [method=" + methodName + ", protocolName=" + protocolName+ ", version=" + versionNumber + ", filePath=" + filePath+ ", parserMap=" + parserMap + ", isCorrect=" + isCorrect+ "]";
 	}
 	
-	
+	public ArrayList<Cookie> getCookies() {
+		// TODO Auto-generated method stub
+		ArrayList<Cookie> totalCookies = new ArrayList<Cookie>();
+		
+		if(parserMap.containsKey("cookie")){
+			for(String c: parserMap.get("cookie")){
+				String[] values = c.split(";");
+				for(String v:values){
+					totalCookies.add(new Cookie(v.split("=")[0].trim(), v.split("=")[1].trim()));
+				}
+			}
+		}
+		return totalCookies;
+	}
 
 	public boolean isCorrectMessage() {
 		return isCorrect;
 	}
 
-	public Map<String,String> getParserMap() {
+	public Map<String,ArrayList<String>> getParserMap() {
 		return parserMap;
 	}
 
@@ -101,12 +127,108 @@ public class RequestData {
 	public String getVersionNumber() {
 		return versionNumber;
 	}
-
+	
+	public  HashMap<String,ArrayList<String>> propertiesMap() {
+		// TODO Auto-generated method stub
+		HashMap<String,ArrayList<String>> methodProps = new HashMap<String,ArrayList<String>>();
+		String finalContentBody = null;
+		if(methodName.equals("POST")){
+			if(parserMap.containsKey("content-length")){
+				if(parserMap.containsKey("content-type")){
+					if(parserMap.get("content-type").size()>0){
+						if(parserMap.get("content-type").get(0).trim().startsWith("application/x-www-form-urlencoded")){
+							finalContentBody = contentBody;
+						}
+					}
+				}
+			}
+		}else if(methodName.equals("GET")){
+			finalContentBody = urlBody;
+			
+		}
+		if(!(finalContentBody==null)){
+			for(String splitContent :finalContentBody.split("&")){
+				if(splitContent.contains("=")){
+					String contentKey = splitContent.split("=")[0].trim();
+					String contentValue = splitContent.split("=")[1].trim();
+					if(methodProps.containsKey(contentKey))
+					{
+						methodProps.get(contentKey).add(contentValue);
+					}
+					else
+					{
+						ArrayList<String> contentVal = new ArrayList<String>();
+						contentVal.add(contentValue);
+						methodProps.put(contentKey, contentVal);
+					}
+				}
+			}
+			
+		}
+		return methodProps;
+	}
+	
+	
+	public String getContentBody(){
+		return contentBody;
+	}
+	
 	public void setContentBody(String contentBody) {
 		// TODO Auto-generated method stub
 		this.contentBody = contentBody;
-		
 	}
+	
+	public String getServletPath(){
+		return servletPath;
+	}
+	
+	public void setServletPath(String servletPath){
+		this.servletPath = servletPath;
+	}
+	
+	public String getDetails(){
+		return details;
+	}
+
+	public void parsePath() {
+		// TODO Auto-generated method stub
+		if(servletPath!=null){
+			if(servletPath.contains(".*")){
+				if(servletPath.startsWith(".*")){
+					finalServletPath = "";
+				}else{
+					finalServletPath = servletPath.substring(0,servletPath.indexOf(".*"));
+				}
+			}else{
+				finalServletPath =servletPath;
+			}
+			String urlPath = filePath.substring(finalServletPath.length());
+			if(urlPath.contains("?")){
+				details = urlPath.split("\\?")[0];
+				urlBody =  urlPath.split("\\?")[1];
+			}else{
+				details = urlPath;
+			}	
+		}
+	}
+
+	public String getUrlBody() {
+		// TODO Auto-generated method stub
+		return urlBody;
+	}
+
+	public String getfinalPath() {
+		// TODO Auto-generated method stub
+		return finalServletPath;
+	}
+ 
+	
+	public String getProtocolName(){
+		return protocolName;
+	}
+
+
+	
 	
 
 }

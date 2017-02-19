@@ -10,10 +10,15 @@ public class ResponseMessage{
 	private String errorStatus;
 	private Map<String,String> headerErrorMessages;
 	private ByteArrayOutputStream byteOutput=null;
-	private static final String commProtocol = "HTTP";
+	private String commProtocol = "HTTP";
 	StringBuilder responseMsg=null;
+	private String versionNumber;
 	//private static final String version_1 = "1.0";
 	//private static final String version_2 = "1.1";
+	
+	public ResponseMessage(){
+		
+	}
 	
 	public ResponseMessage(byte[] errorOutput, String errorCode, String errorStatus, Map<String, String> headerErrorMessages) {
 		// TODO Auto-generated constructor stub
@@ -25,6 +30,14 @@ public class ResponseMessage{
 		this.responseMsg = new StringBuilder();
 	}
 	
+	public ResponseMessage(String commProtocol, String errorCode,
+			String errorStatus) {
+		this.commProtocol = commProtocol;
+		this.errorCode = errorCode;
+		this.errorStatus = errorStatus;
+		this.versionNumber = "";
+	}
+
 	public byte[] giveHttpResponse(String version){
 		
 		try
@@ -84,6 +97,12 @@ public class ResponseMessage{
 	public void responseGen()
 	{
 		System.out.println(responseMsg.toString());
+	}
+
+	public void setVersion(String versionNumber) {
+		// TODO Auto-generated method stub
+		this.versionNumber = versionNumber;
+		
 	}
 	
 }

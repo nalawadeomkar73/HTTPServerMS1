@@ -20,6 +20,9 @@ import java.util.Stack;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+
 import org.apache.tools.ant.taskdefs.condition.Http;
 
 public class WorkerThread extends Thread{
@@ -92,10 +95,11 @@ public class WorkerThread extends Thread{
 				
 				if(HttpServer.getURLMap()!= null){
 					int longestLength = -1;
+					System.out.println("Finally found a servlet");
 					String urlMatch = "";
-					for(Map.Entry<String, String> entry : HttpServer.getURLMap().entrySet()){
+					for(Map.Entry<String, String> mapElement : HttpServer.getURLMap().entrySet()){
 						String fpath;
-						Pattern url = Pattern.compile(entry.getKey());
+						Pattern url = Pattern.compile(mapElement.getKey());
 						if(requestHttp.getFilePath().contains("?")){
 							fpath = requestHttp.getFilePath().split("\\?")[0];
 						}
@@ -104,20 +108,59 @@ public class WorkerThread extends Thread{
 						}
 						if(url.matcher(fpath).matches())
 						{
-							int actLen = entry.getKey().contains("*")?entry.getKey().indexOf("*")-1:entry.getKey().length();
+							int actLen = mapElement.getKey().contains("*")?mapElement.getKey().indexOf("*")-1:mapElement.getKey().length();
 							if(actLen>longestLength)
 							{
+								urlMatch = mapElement.getKey();
 								longestLength = actLen;
-								urlMatch = entry.getKey();
+							
 							}
 						}
 					}
 				
-				
 				if(HttpServer.getURLMap().containsKey(urlMatch)){
 					String servlet = HttpServer.getURLMap().get(urlMatch);
 					if(HttpServer.getServletMap().containsKey(servlet)){
-						
+						requestHttp.setServletPath(urlMatch);
+						requestHttp.parsePath();
+						responseHttp = new ResponseMessage("HTTP","200","OK");
+						responseHttp.setVersion(requestHttp.getVersionNumber());
+						Request req = new Request(requestHttp);
+						Response resp= new Response(responseHttp, req);
+						req.setparameters(requestHttp.propertiesMap());
+						req.setCookies(requestHttp.getCookies());
+						for(Cookie c : req.getCookies()){
+							if(c.getName().equalsIgnoreCase("JSESSIONID"))
+							{
+								synchronized(HttpServer.getSessionMap())
+								{
+									if(HttpServer.getSessionMap().containsKey(c.getValue()))
+									{
+										Session session = HttpServer.getSessionMap().get(c.getValue());
+										session.update();
+										req.saveSession(session);
+									}
+								}
+								break;
+							}
+						}
+						req.setSocket(mySock);
+						resp.setSocket(mySock);
+						try {
+							HttpServer.getServletMap().get(servlet).service(req, resp);
+						} catch (ServletException e) {
+							// TODO Auto-generated catch block
+							System.out.println("In the worker thread");
+						}
+						inputData.close();
+						mySockInputReader.close();
+						mySockInput.close();
+						outtoClient.flush();
+						outtoClient.close();
+						mySock.close();	
+						requestHttp = null;
+						responseHttp= null;
+						continue;
 					}
 					
 				}
@@ -149,10 +192,10 @@ public class WorkerThread extends Thread{
 									
 									
 									if(requestHttp.getParserMap().containsKey("if-modified-since")){
-										dateWhenModified =  parseDateMethod(requestHttp.getParserMap().get("if-modified-since"));
+										dateWhenModified =  parseDateMethod(requestHttp.getParserMap().get("if-modified-since").get(0));
 									}
 									else{
-										dateWhenModified =  parseDateMethod(requestHttp.getParserMap().get("if-unmodified-since"));
+										dateWhenModified =  parseDateMethod(requestHttp.getParserMap().get("if-unmodified-since").get(0));
 									}
 									
 									if(dateWhenModified!=null){
@@ -269,10 +312,10 @@ public class WorkerThread extends Thread{
 							dateWhenFileModified.setTimeInMillis(fp.lastModified());
 						
 							if(requestHttp.getParserMap().containsKey("if-modified-since")){
-								dateWhenModified =  parseDateMethod(requestHttp.getParserMap().get("if-modified-since"));
+								dateWhenModified =  parseDateMethod(requestHttp.getParserMap().get("if-modified-since").get(0));
 							}
 							else{
-								dateWhenModified =  parseDateMethod(requestHttp.getParserMap().get("if-unmodified-since"));
+								dateWhenModified =  parseDateMethod(requestHttp.getParserMap().get("if-unmodified-since").get(0));
 							}
 							
 							
@@ -614,7 +657,7 @@ public class WorkerThread extends Thread{
 			reqHTTP = new RequestData(readInputData.toString());
 			if(reqHTTP.getMethodName().equals("POST")){
 				if(reqHTTP.getParserMap().containsKey("content-length")){
-					int contentLen = Integer.valueOf(reqHTTP.getParserMap().get("content-length"));
+					int contentLen = Integer.valueOf(reqHTTP.getParserMap().get("content-length").get(0));
 					char[] contentData = new char[contentLen];
 					if(inputData.read(contentData)== contentLen){
 						String contentBody = new String(contentData);

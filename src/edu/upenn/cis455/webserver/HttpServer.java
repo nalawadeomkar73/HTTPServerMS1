@@ -113,7 +113,7 @@ public static void main(String args[])
 		  }
 	  }
 	 
-	  else{
+	 /* else{
 		  Selector selector = null;
 		  ServerSocketChannel server = null;
 		  isNotShutdown = true;
@@ -176,7 +176,7 @@ public static void main(String args[])
 				catch(NullPointerException e){
 				}
 		  	}
-	  	}
+	  	}*/
 		  
 	 }
 
@@ -235,6 +235,12 @@ public static  HashMap<String, String> getURLMap() {
 public static  HashMap<String, HttpServlet> getServletMap() {
 	// TODO Auto-generated method stub
 	return servlets;
+}
+
+
+public static HashMap<String, Session> getSessionMap() {
+	// TODO Auto-generated method stub
+	return sessionMap;
 }
 }
 

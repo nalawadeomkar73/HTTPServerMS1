@@ -211,4 +211,11 @@ class Session implements HttpSession {
 	
 	private Properties m_props = new Properties();
 	private boolean m_valid = true;
+
+
+
+	public void update() {
+		lastAccessedTime = new Date();
+		
+	}
 }
