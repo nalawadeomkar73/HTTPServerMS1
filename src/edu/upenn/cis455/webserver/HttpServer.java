@@ -18,8 +18,13 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.servlet.http.HttpServlet;
 import javax.xml.parsers.SAXParser;
@@ -43,6 +48,8 @@ class HttpServer {
   private static HashMap<String, String> urlPatterns;
 private static HashMap<String, Session> sessionMap;
 private static HashMap<String, HttpServlet> servlets;
+protected static Timer timer;
+private static TimerTask newSession;
 
   
 
@@ -93,9 +100,12 @@ public static void main(String args[])
 				HashMap<String,HttpServlet> servlets = createServlets(h,context);
 				sessionMap = new HashMap<String, Session>();
 				urlPatterns = new HashMap<String, String>(h.urlPattern);
+				timer = new Timer();
+				timer.schedule(newSession, 0,7000);
+				
 					
 			} catch (Exception e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 		  try {
 			  threadPool = new ThreadPool(portNumber,rootDirectory,noOfThreads);
@@ -105,7 +115,8 @@ public static void main(String args[])
 				  while(true){
 					  Socket sock = server.accept();
 					  threadPool.add(sock);	  
-				  }  
+				  }
+				
 		  } catch (InterruptedException e) {
 			  
 		  } catch (IOException e) {
@@ -177,6 +188,26 @@ public static void main(String args[])
 				}
 		  	}
 	  	}*/
+	  newSession = new TimerTask(){
+
+			@Override
+			public void run() {
+				synchronized (sessionMap) {
+					Iterator<Map.Entry<String, Session>> it = sessionMap.entrySet().iterator();
+					while(it.hasNext()){
+						 
+						Map.Entry<String, Session> sMap =it.next();
+						Session currentSession = sMap.getValue();
+						Date d = new Date();
+						if(currentSession.getMaxInactiveInterval()!=1 && (d.getTime()-currentSession.getLastAccessedTime())>1000*currentSession.getMaxInactiveInterval()){
+							currentSession.invalidate();
+							it.remove();
+						}
+					}
+				}
+				
+			}
+		};
 		  
 	 }
 
@@ -242,6 +273,8 @@ public static HashMap<String, Session> getSessionMap() {
 	// TODO Auto-generated method stub
 	return sessionMap;
 }
+
+
 }
 
 	

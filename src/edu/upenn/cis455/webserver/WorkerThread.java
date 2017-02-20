@@ -96,16 +96,16 @@ public class WorkerThread extends Thread{
 				
 				if(HttpServer.getURLMap()!= null){
 					int longestLength = -1;
-					System.out.println("Finally found a servlet");
+					
 					String urlMatch = "";
 					for(Map.Entry<String, String> mapElement : HttpServer.getURLMap().entrySet()){
 						String fpath;
 						Pattern url = Pattern.compile(mapElement.getKey());
-						if(requestHttp.getFilePath().contains("?")){
-							fpath = requestHttp.getFilePath().split("\\?")[0];
+						if(hrefPath.contains("?")){
+							fpath = hrefPath.split("\\?")[0];
 						}
 						else{
-							fpath = requestHttp.getFilePath();
+							fpath = hrefPath;
 						}
 						if(url.matcher(fpath).matches())
 						{
@@ -117,9 +117,11 @@ public class WorkerThread extends Thread{
 							
 							}
 						}
+						
 					}
 				
 				if(HttpServer.getURLMap().containsKey(urlMatch)){
+					
 					String servlet = HttpServer.getURLMap().get(urlMatch);
 					if(HttpServer.getServletMap().containsKey(servlet)){
 						requestHttp.setServletPath(urlMatch);
@@ -153,6 +155,7 @@ public class WorkerThread extends Thread{
 							// TODO Auto-generated catch block
 							System.out.println("In the worker thread");
 						}
+						
 						inputData.close();
 						mySockInputReader.close();
 						mySockInput.close();
@@ -165,7 +168,9 @@ public class WorkerThread extends Thread{
 					}
 					
 				}
+				
 				}
+				System.out.println("IN the static part");
 				File fp = new File(requestHttp.getFilePath());
 				String contentOutput ="";
 				Map<String,ArrayList<String>> requestHttpMessages = new HashMap<String,ArrayList<String>>();

@@ -103,7 +103,18 @@ public class ResponseMessage{
 	{
 		System.out.println(responseMsg.toString());
 	}
-
+	
+	public void clearAll() {
+		// TODO Auto-generated method stub
+		this.errorCode ="";
+		this.errorStatus = "";
+		StringBuilder sb = new StringBuilder("");
+		this.responseMsg = sb;
+		this.headerErrorMessages.clear();
+		
+		
+	}
+	
 	public void setVersion(String versionNumber) {
 		this.versionNumber = versionNumber;
 		
@@ -117,6 +128,8 @@ public class ResponseMessage{
 	public void setErrorStatus(String response){
 		this.errorStatus = response;
 	}
+
+	
 	
 	
 	

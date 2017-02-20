@@ -24,9 +24,13 @@ public class Response implements HttpServletResponse {
 	private Socket sock;
 	private ResponseMessage responseHttp;
 	private Request req;
-	private int bufferSize;
+	private int bSize;
 	private StringWriter s;
 	private int errorStatusCode;
+	private String charEncoding;
+	private boolean isCommit = false;
+	private Locale locale;
+	private ArrayList<Cookie> cookieList = new ArrayList<Cookie>();
 
 	public Response(ResponseMessage responseHttp, Request req) {
 		// TODO Auto-generated constructor stub
@@ -42,9 +46,18 @@ public class Response implements HttpServletResponse {
 		StringBuilder cp = new StringBuilder();
 		cp.append(c.getName()+"=");
 		cp.append(c.getValue()+"; ");
-		cp.append("Path="+c.getPath()+"; ");
-		cp.append("Domain="+c.getDomain()+"; ");
 		cp.append("Max-Age"+c.getMaxAge());
+		cookieList.add(c);
+		if(responseHttp.getHeaderMap().containsKey("set-cookie")){
+			responseHttp.getHeaderMap().get("set-cookie").add(cp.toString());
+		}else{
+			ArrayList<String> headerValues = new ArrayList<String>();
+			headerValues.add(cp.toString());
+			responseHttp.getHeaderMap().put("set-cookie", headerValues);
+		}
+		
+		
+		
 		//if(responseHttp)
 		
 
@@ -95,11 +108,11 @@ public class Response implements HttpServletResponse {
 		if(!isCommitted()){
 			String contentOutput = "<html><body>"+statusCode+statusMessage+"</body></html>";
 			setBufferSize(contentOutput.length());
-			s = new StringWriter(bufferSize);
+			s = new StringWriter(bSize);
 			setStatus(statusCode);
 			responseHttp.setErrorStatus(statusMessage);
 			setContentLength(contentOutput.length());
-			setContentType("text/html; charset=utf-8");
+			setContentType("text/html");
 			
 			//Pending to write to print writer
 			flushBuffer();
@@ -118,11 +131,11 @@ public class Response implements HttpServletResponse {
 		if(!isCommitted()){
 			String contentOutput = "<html><body>"+statusCode+"</body></html>";
 			setBufferSize(contentOutput.length());
-			s = new StringWriter(bufferSize);
+			s = new StringWriter(bSize);
 			setStatus(statusCode);
 			//responseHttp.setErrorStatus(statusMessage);
 			setContentLength(contentOutput.length());
-			setContentType("text/html; charset=utf-8");
+			setContentType("text/html");
 			
 			//Pending to write to print writer
 			flushBuffer();
@@ -239,7 +252,11 @@ public class Response implements HttpServletResponse {
 	 */
 	public String getCharacterEncoding() {
 		// TODO Auto-generated method stub
-		return null;
+		if(charEncoding!=null){
+			return charEncoding;
+		}else{
+			return "ISO-8859-1";
+		}
 	}
 
 	/* (non-Javadoc)
@@ -247,7 +264,12 @@ public class Response implements HttpServletResponse {
 	 */
 	public String getContentType() {
 		// TODO Auto-generated method stub
-		return null;
+		if(responseHttp.getHeaderMap().containsKey("content-type")){
+			return responseHttp.getHeaderMap().get("content-type").get(0);
+		}else{
+			return null;
+		}
+		
 	}
 
 	/* (non-Javadoc)
@@ -268,25 +290,32 @@ public class Response implements HttpServletResponse {
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletResponse#setCharacterEncoding(java.lang.String)
 	 */
-	public void setCharacterEncoding(String arg0) {
+	public void setCharacterEncoding(String encoding) {
 		// TODO Auto-generated method stub
+		charEncoding = encoding;
 
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletResponse#setContentLength(int)
 	 */
-	public void setContentLength(int arg0) {
+	public void setContentLength(int len) {
 		// TODO Auto-generated method stub
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(String.valueOf(len));
+		responseHttp.getHeaderMap().put("content-length", headerValues);
 
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletResponse#setContentType(java.lang.String)
 	 */
-	public void setContentType(String arg0) {
+	public void setContentType(String contentValue) {
 		// TODO Auto-generated method stub
-
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(contentValue);
+		responseHttp.getHeaderMap().put("content-type", headerValues);
+		
 	}
 
 	/* (non-Javadoc)
@@ -294,7 +323,7 @@ public class Response implements HttpServletResponse {
 	 */
 	public void setBufferSize(int bufSize) {
 		// TODO Auto-generated method stub
-		bufferSize = bufSize;
+		bSize = bufSize;
 	}
 
 	/* (non-Javadoc)
@@ -302,7 +331,7 @@ public class Response implements HttpServletResponse {
 	 */
 	public int getBufferSize() {
 		// TODO Auto-generated method stub
-		return bufferSize;
+		return bSize;
 	}
 
 	/* (non-Javadoc)
@@ -318,7 +347,11 @@ public class Response implements HttpServletResponse {
 	 */
 	public void resetBuffer() {
 		// TODO Auto-generated method stub
-
+		if(!isCommitted()){
+			s.getBuffer().setLength(0);
+		}else{
+			throw new IllegalStateException("Reset the buffer");
+		}
 	}
 
 	/* (non-Javadoc)
@@ -326,22 +359,30 @@ public class Response implements HttpServletResponse {
 	 */
 	public boolean isCommitted() {
 		// TODO Auto-generated method stub
-		return false;
+		return isCommit ;
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletResponse#reset()
 	 */
 	public void reset() {
-		// TODO Auto-generated method stub
+		if(!isCommitted()){
+			responseHttp.clearAll();
+		}else{
+			throw new IllegalStateException("Reset the buffer");
+		}
 
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletResponse#setLocale(java.util.Locale)
 	 */
-	public void setLocale(Locale arg0) {
+	public void setLocale(Locale lcl) {
 		// TODO Auto-generated method stub
+		if(!isCommitted() && charEncoding==null){
+			locale = lcl;
+		}
+		
 
 	}
 
@@ -350,7 +391,7 @@ public class Response implements HttpServletResponse {
 	 */
 	public Locale getLocale() {
 		// TODO Auto-generated method stub
-		return null;
+		return locale;
 	}
 
 	public void setSocket(Socket mySock) {
