@@ -2,7 +2,11 @@ package edu.upenn.cis455.webserver;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 
 import javax.servlet.ServletOutputStream;
@@ -18,25 +22,40 @@ import javax.servlet.http.HttpServletResponse;
 public class Response implements HttpServletResponse {
 
 	private Socket sock;
+	private ResponseMessage responseHttp;
+	private Request req;
+	private int bufferSize;
+	private StringWriter s;
+	private int errorStatusCode;
 
 	public Response(ResponseMessage responseHttp, Request req) {
 		// TODO Auto-generated constructor stub
+		this.responseHttp = responseHttp;
+		this.req = req;
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServletResponse#addCookie(javax.servlet.http.Cookie)
 	 */
-	public void addCookie(Cookie arg0) {
+	public void addCookie(Cookie c) {
 		// TODO Auto-generated method stub
+		StringBuilder cp = new StringBuilder();
+		cp.append(c.getName()+"=");
+		cp.append(c.getValue()+"; ");
+		cp.append("Path="+c.getPath()+"; ");
+		cp.append("Domain="+c.getDomain()+"; ");
+		cp.append("Max-Age"+c.getMaxAge());
+		//if(responseHttp)
+		
 
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServletResponse#containsHeader(java.lang.String)
 	 */
-	public boolean containsHeader(String arg0) {
+	public boolean containsHeader(String header) {
 		// TODO Auto-generated method stub
-		return false;
+		return responseHttp.getHeaderMap().containsKey(header);
 	}
 
 	/* (non-Javadoc)
@@ -71,17 +90,46 @@ public class Response implements HttpServletResponse {
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServletResponse#sendError(int, java.lang.String)
 	 */
-	public void sendError(int arg0, String arg1) throws IOException {
+	public void sendError(int statusCode, String statusMessage) throws IOException {
 		// TODO Auto-generated method stub
-
+		if(!isCommitted()){
+			String contentOutput = "<html><body>"+statusCode+statusMessage+"</body></html>";
+			setBufferSize(contentOutput.length());
+			s = new StringWriter(bufferSize);
+			setStatus(statusCode);
+			responseHttp.setErrorStatus(statusMessage);
+			setContentLength(contentOutput.length());
+			setContentType("text/html; charset=utf-8");
+			
+			//Pending to write to print writer
+			flushBuffer();
+			
+		}else{
+			throw new IllegalStateException("In send Error with status code and status message");
+		}
+		
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServletResponse#sendError(int)
 	 */
-	public void sendError(int arg0) throws IOException {
+	public void sendError(int statusCode) throws IOException {
 		// TODO Auto-generated method stub
-
+		if(!isCommitted()){
+			String contentOutput = "<html><body>"+statusCode+"</body></html>";
+			setBufferSize(contentOutput.length());
+			s = new StringWriter(bufferSize);
+			setStatus(statusCode);
+			//responseHttp.setErrorStatus(statusMessage);
+			setContentLength(contentOutput.length());
+			setContentType("text/html; charset=utf-8");
+			
+			//Pending to write to print writer
+			flushBuffer();
+			
+		}else{
+			throw new IllegalStateException("In send Error with status code");
+		}
 	}
 
 	/* (non-Javadoc)
@@ -103,7 +151,9 @@ public class Response implements HttpServletResponse {
 	 */
 	public void setDateHeader(String arg0, long arg1) {
 		// TODO Auto-generated method stub
-
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new Date(arg1)));
+		responseHttp.getHeaderMap().put(arg0, headerValues);
 	}
 
 	/* (non-Javadoc)
@@ -111,6 +161,13 @@ public class Response implements HttpServletResponse {
 	 */
 	public void addDateHeader(String arg0, long arg1) {
 		// TODO Auto-generated method stub
+		if(responseHttp.getHeaderMap().containsKey(arg0)){
+			responseHttp.getHeaderMap().get(arg0).add(HTTPHandler.dateFormat().format(new Date(arg1)));
+		}else{
+			ArrayList<String> headerValues = new ArrayList<String>();
+			headerValues.add(HTTPHandler.dateFormat().format(new Date(arg1)));
+			responseHttp.getHeaderMap().put(arg0, headerValues);
+		}
 
 	}
 
@@ -119,6 +176,9 @@ public class Response implements HttpServletResponse {
 	 */
 	public void setHeader(String arg0, String arg1) {
 		// TODO Auto-generated method stub
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(arg1);
+		responseHttp.getHeaderMap().put(arg0, headerValues);
 
 	}
 
@@ -126,15 +186,22 @@ public class Response implements HttpServletResponse {
 	 * @see javax.servlet.http.HttpServletResponse#addHeader(java.lang.String, java.lang.String)
 	 */
 	public void addHeader(String arg0, String arg1) {
-		// TODO Auto-generated method stub
-
+		if(responseHttp.getHeaderMap().containsKey(arg0)){
+			responseHttp.getHeaderMap().get(arg0).add(arg1);
+		}else{
+			ArrayList<String> headerValues = new ArrayList<String>();
+			headerValues.add(arg1);
+			responseHttp.getHeaderMap().put(arg0, headerValues);
+		}
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServletResponse#setIntHeader(java.lang.String, int)
 	 */
 	public void setIntHeader(String arg0, int arg1) {
-		// TODO Auto-generated method stub
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(String.valueOf(arg1));
+		responseHttp.getHeaderMap().put(arg0, headerValues);
 
 	}
 
@@ -142,16 +209,21 @@ public class Response implements HttpServletResponse {
 	 * @see javax.servlet.http.HttpServletResponse#addIntHeader(java.lang.String, int)
 	 */
 	public void addIntHeader(String arg0, int arg1) {
-		// TODO Auto-generated method stub
-
+		if(responseHttp.getHeaderMap().containsKey(arg0)){
+			responseHttp.getHeaderMap().get(arg0).add(String.valueOf(arg1));
+		}else{
+			ArrayList<String> headerValues = new ArrayList<String>();
+			headerValues.add(String.valueOf(arg1));
+			responseHttp.getHeaderMap().put(arg0, headerValues);
+		}
 	}
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServletResponse#setStatus(int)
 	 */
-	public void setStatus(int arg0) {
+	public void setStatus(int statusCode) {
 		// TODO Auto-generated method stub
-
+		errorStatusCode = statusCode;
 	}
 
 	/* (non-Javadoc)
@@ -220,9 +292,9 @@ public class Response implements HttpServletResponse {
 	/* (non-Javadoc)
 	 * @see javax.servlet.ServletResponse#setBufferSize(int)
 	 */
-	public void setBufferSize(int arg0) {
+	public void setBufferSize(int bufSize) {
 		// TODO Auto-generated method stub
-
+		bufferSize = bufSize;
 	}
 
 	/* (non-Javadoc)
@@ -230,7 +302,7 @@ public class Response implements HttpServletResponse {
 	 */
 	public int getBufferSize() {
 		// TODO Auto-generated method stub
-		return 0;
+		return bufferSize;
 	}
 
 	/* (non-Javadoc)

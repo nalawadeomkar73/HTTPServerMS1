@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -167,7 +168,8 @@ public class WorkerThread extends Thread{
 				}
 				File fp = new File(requestHttp.getFilePath());
 				String contentOutput ="";
-				Map<String,String> requestHttpMessages = new HashMap<String,String>();
+				Map<String,ArrayList<String>> requestHttpMessages = new HashMap<String,ArrayList<String>>();
+				ArrayList<String> headerValues;
 				if(fp.exists()){
 					if(fp.canRead()==false){
 						outtoClient.write(HTTPHandler.get403StatusMessage().giveHttpResponse(requestHttp.getVersionNumber()));
@@ -208,10 +210,18 @@ public class WorkerThread extends Thread{
 										}
 										else{
 											contentOutput = new String(bytesArray);
-											requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-											requestHttpMessages.put("Content-Length",""+contentOutput.length());
-											requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
-											requestHttpMessages.put("Connection", "Close");
+											headerValues = new ArrayList<String>();
+											headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+											requestHttpMessages.put("Date", headerValues);
+											headerValues = new ArrayList<String>();
+											headerValues.add(""+contentOutput.length());
+											requestHttpMessages.put("Content-Length",headerValues);
+											headerValues = new ArrayList<String>();
+											headerValues.add(Files.probeContentType(fp.toPath()) +"; charset=utf-8");
+											requestHttpMessages.put("Content-type",headerValues);
+											headerValues = new ArrayList<String>();
+											headerValues.add("Close");
+											requestHttpMessages.put("Connection", headerValues);
 											responseHttp = new ResponseMessage(bytesArray, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 											if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 												outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
@@ -236,11 +246,23 @@ public class WorkerThread extends Thread{
 										}
 										else{
 											contentOutput = new String(bytesArray);
-											requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-											requestHttpMessages.put("Content-Length",""+contentOutput.length());
-											requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
-											requestHttpMessages.put("Connection", "Close");
-											requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+											
+											headerValues = new ArrayList<String>();
+											headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+											requestHttpMessages.put("Date", headerValues);
+											headerValues = new ArrayList<String>();
+											headerValues.add(""+contentOutput.length());
+											requestHttpMessages.put("Content-Length",headerValues);
+											headerValues = new ArrayList<String>();
+											headerValues.add(Files.probeContentType(fp.toPath()) +"; charset=utf-8");
+											requestHttpMessages.put("Content-type",headerValues);
+											headerValues = new ArrayList<String>();
+											headerValues.add("Close");
+											requestHttpMessages.put("Connection", headerValues);
+											headerValues = new ArrayList<String>();
+											headerValues.add(HTTPHandler.dateFormat().format(fp.lastModified()));
+											requestHttpMessages.put("Last-Modified",headerValues);
+										
 											responseHttp = new ResponseMessage(bytesArray, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 											if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 												outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
@@ -258,11 +280,25 @@ public class WorkerThread extends Thread{
 									}
 									}else{
 										contentOutput = new String(bytesArray);
-										requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-										requestHttpMessages.put("Content-Length",""+contentOutput.length());
-										requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
-										requestHttpMessages.put("Connection", "Close");
-										requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+										
+										headerValues = new ArrayList<String>();
+										headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+										requestHttpMessages.put("Date", headerValues);
+										headerValues = new ArrayList<String>();
+										headerValues.add(""+contentOutput.length());
+										requestHttpMessages.put("Content-Length",headerValues);
+										headerValues = new ArrayList<String>();
+										headerValues.add(Files.probeContentType(fp.toPath()) +"; charset=utf-8");
+										requestHttpMessages.put("Content-type",headerValues);
+										headerValues = new ArrayList<String>();
+										headerValues.add("Close");
+										requestHttpMessages.put("Connection", headerValues);
+										headerValues = new ArrayList<String>();
+										headerValues.add(HTTPHandler.dateFormat().format(fp.lastModified()));
+										requestHttpMessages.put("Last-Modified",headerValues);
+									
+										
+						
 										responseHttp = new ResponseMessage(bytesArray, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 										if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 											outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
@@ -281,11 +317,23 @@ public class WorkerThread extends Thread{
 									
 							}else{
 								contentOutput = new String(bytesArray);
-								requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-								requestHttpMessages.put("Content-Length",""+contentOutput.length());
-								requestHttpMessages.put("Content-type",Files.probeContentType(fp.toPath()) +"; charset=utf-8");
-								requestHttpMessages.put("Connection", "Close");
-								requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+								
+								headerValues = new ArrayList<String>();
+								headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+								requestHttpMessages.put("Date", headerValues);
+								headerValues = new ArrayList<String>();
+								headerValues.add(""+contentOutput.length());
+								requestHttpMessages.put("Content-Length",headerValues);
+								headerValues = new ArrayList<String>();
+								headerValues.add(Files.probeContentType(fp.toPath()) +"; charset=utf-8");
+								requestHttpMessages.put("Content-type",headerValues);
+								headerValues = new ArrayList<String>();
+								headerValues.add("Close");
+								requestHttpMessages.put("Connection", headerValues);
+								headerValues = new ArrayList<String>();
+								headerValues.add(HTTPHandler.dateFormat().format(fp.lastModified()));
+								requestHttpMessages.put("Last-Modified",headerValues);
+							
 								responseHttp = new ResponseMessage(bytesArray, "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 								if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 									outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
@@ -349,11 +397,24 @@ public class WorkerThread extends Thread{
 									}
 									filesInfo.append(htmlEnd);
 									contentOutput = filesInfo.toString();
-									requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-									requestHttpMessages.put("Content-Length",""+contentOutput.length());
-									requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
-									requestHttpMessages.put("Connection", "Close");
-									requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+									
+									headerValues = new ArrayList<String>();
+									headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+									requestHttpMessages.put("Date", headerValues);
+									headerValues = new ArrayList<String>();
+									headerValues.add(""+contentOutput.length());
+									requestHttpMessages.put("Content-Length",headerValues);
+									headerValues = new ArrayList<String>();
+									headerValues.add("text/html; charset=utf-8");
+									requestHttpMessages.put("Content-type",headerValues);
+									headerValues = new ArrayList<String>();
+									headerValues.add("Close");
+									requestHttpMessages.put("Connection", headerValues);
+									headerValues = new ArrayList<String>();
+									headerValues.add(HTTPHandler.dateFormat().format(fp.lastModified()));
+									requestHttpMessages.put("Last-Modified",headerValues);
+								
+							
 									responseHttp = new ResponseMessage(contentOutput.getBytes(), "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 									if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 										outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
@@ -395,11 +456,23 @@ public class WorkerThread extends Thread{
 									}
 									filesInfo.append(htmlEnd);
 									contentOutput = filesInfo.toString();
-									requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-									requestHttpMessages.put("Content-Length",""+contentOutput.length());
-									requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
-									requestHttpMessages.put("Connection", "Close");
-									requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+									
+									headerValues = new ArrayList<String>();
+									headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+									requestHttpMessages.put("Date", headerValues);
+									headerValues = new ArrayList<String>();
+									headerValues.add(""+contentOutput.length());
+									requestHttpMessages.put("Content-Length",headerValues);
+									headerValues = new ArrayList<String>();
+									headerValues.add("text/html; charset=utf-8");
+									requestHttpMessages.put("Content-type",headerValues);
+									headerValues = new ArrayList<String>();
+									headerValues.add("Close");
+									requestHttpMessages.put("Connection", headerValues);
+									headerValues = new ArrayList<String>();
+									headerValues.add(HTTPHandler.dateFormat().format(fp.lastModified()));
+									requestHttpMessages.put("Last-Modified",headerValues);
+									
 									responseHttp = new ResponseMessage(contentOutput.getBytes(), "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 									if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 										outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
@@ -435,11 +508,23 @@ public class WorkerThread extends Thread{
 								}
 								filesInfo.append(htmlEnd);
 								contentOutput = filesInfo.toString();
-								requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-								requestHttpMessages.put("Content-Length",""+contentOutput.length());
-								requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
-								requestHttpMessages.put("Connection", "Close");
-								requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+								
+								headerValues = new ArrayList<String>();
+								headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+								requestHttpMessages.put("Date", headerValues);
+								headerValues = new ArrayList<String>();
+								headerValues.add(""+contentOutput.length());
+								requestHttpMessages.put("Content-Length",headerValues);
+								headerValues = new ArrayList<String>();
+								headerValues.add("text/html; charset=utf-8");
+								requestHttpMessages.put("Content-type",headerValues);
+								headerValues = new ArrayList<String>();
+								headerValues.add("Close");
+								requestHttpMessages.put("Connection", headerValues);
+								headerValues = new ArrayList<String>();
+								headerValues.add(HTTPHandler.dateFormat().format(fp.lastModified()));
+								requestHttpMessages.put("Last-Modified",headerValues);
+
 								responseHttp = new ResponseMessage(contentOutput.getBytes(), "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 								if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 									outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
@@ -477,11 +562,23 @@ public class WorkerThread extends Thread{
 						}
 						filesInfo.append(htmlEnd);
 						contentOutput = filesInfo.toString();
-						requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-						requestHttpMessages.put("Content-Length",""+contentOutput.length());
-						requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
-						requestHttpMessages.put("Connection", "Close");
-						requestHttpMessages.put("Last-Modified",HTTPHandler.dateFormat().format(fp.lastModified()));
+						
+						headerValues = new ArrayList<String>();
+						headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+						requestHttpMessages.put("Date", headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add(""+contentOutput.length());
+						requestHttpMessages.put("Content-Length",headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add("text/html; charset=utf-8");
+						requestHttpMessages.put("Content-type",headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add("Close");
+						requestHttpMessages.put("Connection", headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add(HTTPHandler.dateFormat().format(fp.lastModified()));
+						requestHttpMessages.put("Last-Modified",headerValues);
+						
 						responseHttp = new ResponseMessage(contentOutput.getBytes(), "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 						if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 							outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
@@ -517,10 +614,20 @@ public class WorkerThread extends Thread{
 						}
 						controlOutput.append("</body></html>");
 						contentOutput = controlOutput.toString();
-						requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-						requestHttpMessages.put("Content-Length",""+contentOutput.length());
-						requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
-						requestHttpMessages.put("Connection", "Close");
+						
+						headerValues = new ArrayList<String>();
+						headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+						requestHttpMessages.put("Date", headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add(""+contentOutput.length());
+						requestHttpMessages.put("Content-Length",headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add("text/html; charset=utf-8");
+						requestHttpMessages.put("Content-type",headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add("Close");
+						requestHttpMessages.put("Connection", headerValues);
+						
 						responseHttp = new ResponseMessage(contentOutput.getBytes(), "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 						if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 							outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));
@@ -540,10 +647,20 @@ public class WorkerThread extends Thread{
 						
 						
 						//spawn a new thread
-						requestHttpMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-						requestHttpMessages.put("Content-Length",""+contentOutput.length());
-						requestHttpMessages.put("Content-type", "text/html; charset=utf-8");
-						requestHttpMessages.put("Connection", "Close");
+						headerValues = new ArrayList<String>();
+						headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+						requestHttpMessages.put("Date", headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add(""+contentOutput.length());
+						requestHttpMessages.put("Content-Length",headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add("text/html; charset=utf-8");
+						requestHttpMessages.put("Content-type",headerValues);
+						headerValues = new ArrayList<String>();
+						headerValues.add("Close");
+						requestHttpMessages.put("Connection", headerValues);
+						
+						
 						responseHttp = new ResponseMessage(contentOutput.getBytes(), "200", HTTPHandler.getHttpResponseMessages().get("200"), requestHttpMessages);
 						if(requestHttp.getMethodName().equalsIgnoreCase("HEAD")){
 							outtoClient.write(responseHttp.giveHttpResponseWithHeaders(requestHttp.getVersionNumber()));

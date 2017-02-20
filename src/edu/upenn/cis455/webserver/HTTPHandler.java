@@ -1,5 +1,6 @@
 package edu.upenn.cis455.webserver;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -7,7 +8,7 @@ import java.util.TimeZone;
 
 public class HTTPHandler {
 	private static SimpleDateFormat datePattern;
-	private static Map<String,String> headerErrorMessages;
+	private static Map<String,ArrayList<String>> headerErrorMessages;
 	private static Map<String,String> httpResponseMessages;
 	private static ResponseMessage get404Status;
 	private static ResponseMessage get100Status;
@@ -30,9 +31,14 @@ public class HTTPHandler {
 		datePattern1 = new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss z");
 		datePattern2 = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
 		datePattern.setTimeZone(TimeZone.getTimeZone("GMT"));
-		headerErrorMessages = new HashMap<String,String>();
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-		headerErrorMessages.put("Connection", "Close");
+		headerErrorMessages = new HashMap<String,ArrayList<String>>();
+		ArrayList<String> headerValues;
+		headerValues= new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date", headerValues);
+		headerValues= new ArrayList<String>();
+		headerValues.add("Close");
+		headerErrorMessages.put("Connection", headerValues);
 		httpResponseMessages = new HashMap<String,String>();
 		httpResponseMessages.put("100", "CONTINUE");
 		httpResponseMessages.put("200","OK");
@@ -52,7 +58,9 @@ public class HTTPHandler {
 		get100Status = new ResponseMessage(errorOutput.getBytes(),"100",httpResponseMessages.get("100"),headerErrorMessages);
 		
 		errorOutput = "<html><body>"+"200"+" : "+httpResponseMessages.get("200")+"</body></html>\r\n";
-		headerErrorMessages.put("Content-Length", ""+errorOutput.length());
+		headerValues= new ArrayList<String>();
+		headerValues.add(""+errorOutput.length());
+		headerErrorMessages.put("Content-Length", headerValues);
 		get200Status = new ResponseMessage(errorOutput.getBytes(),"200",httpResponseMessages.get("200"),headerErrorMessages);
 
 		errorOutput = "<html><body>"+"400"+" : "+httpResponseMessages.get("400")+"</body></html>\r\n";
@@ -77,7 +85,9 @@ public class HTTPHandler {
 		get500Status = new ResponseMessage(errorOutput.getBytes(),"500",httpResponseMessages.get("500"),headerErrorMessages);
 		
 		errorOutput = "<html><body>"+"405"+" : "+httpResponseMessages.get("405")+"</body></html>\r\n";
-		headerErrorMessages.put("Accept", "HEAD, GET");
+		headerValues = new ArrayList<String>();
+		headerValues.add("HEAD, GET");
+		headerErrorMessages.put("Accept", headerValues);
 		get405Status = new ResponseMessage(errorOutput.getBytes(), "405", httpResponseMessages.get("405"), headerErrorMessages);
 		
 	}
@@ -103,43 +113,58 @@ public class HTTPHandler {
 	}
 	
 	public static ResponseMessage get200StatusMessage(){
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date",headerValues);
 		return get200Status;
 	}
 	
 	public static ResponseMessage get301StatusMessage(){
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date",headerValues);
 		return get301Status;
 	}
 	
 	public static ResponseMessage get304StatusMessage(){
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date",headerValues);
 		return get304Status;
 	}
 	
 	public static ResponseMessage get403StatusMessage(){
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date",headerValues);
 		return get403Status;
 	}
 	
 	public static ResponseMessage get404StatusMessage(){
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date",headerValues);
 		return get404Status;
 	}
 	
 	public static ResponseMessage get412StatusMessage(){
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date",headerValues);
 		return get412Status;
 	}
 	
 	public static ResponseMessage get500StatusMessage(){
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date",headerValues);
 		return get500Status;
 	}
 	
 	public static ResponseMessage get400StatusMessage(){
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
-		//headerErrorMessages.put("Content-type", arg1)
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date",headerValues);
 		return get400Status;
 	}
 
@@ -149,7 +174,9 @@ public class HTTPHandler {
 	}
 	
 	public static ResponseMessage get405StatusMessage(){
-		headerErrorMessages.put("Date", HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		ArrayList<String> headerValues = new ArrayList<String>();
+		headerValues.add(HTTPHandler.dateFormat().format(new GregorianCalendar().getTime()));
+		headerErrorMessages.put("Date",headerValues);
 		return get405Status;
 	}
 	
