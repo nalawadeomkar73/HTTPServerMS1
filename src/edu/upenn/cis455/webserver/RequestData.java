@@ -46,6 +46,7 @@ public class RequestData {
 		else{
 			methodName = parserContent[0].trim();
 			filePath = parserContent[1].trim();
+			
 			if(filePath.equals(null)||filePath.equals("/favicon.ico")){
 				return;
 			}
@@ -114,7 +115,8 @@ public class RequestData {
 	public String getFilePath() {
 		return filePath;
 	}
-
+	
+	
 	public void setFilePath(String newFilePath) {
 		this.filePath = newFilePath;
 		

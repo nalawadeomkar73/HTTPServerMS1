@@ -15,5 +15,6 @@ public class CookieServlet1 extends HttpServlet {
 		out.println("<P>Added cookie (TestCookie,54321) to response.</P>");
 		out.println("<P>Continue to <A HREF=\"cookie2\">Cookie Servlet 2</A>.</P>");
 		out.println("</BODY></HTML>");		
+		response.flushBuffer();
 	}
 }

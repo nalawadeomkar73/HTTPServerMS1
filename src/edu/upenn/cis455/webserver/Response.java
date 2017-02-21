@@ -1,5 +1,6 @@
 package edu.upenn.cis455.webserver;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -26,6 +27,7 @@ public class Response implements HttpServletResponse {
 	private Request req;
 	private int bSize;
 	private StringWriter s;
+	private BuffWriter pw;
 	private int errorStatusCode;
 	private String charEncoding;
 	private boolean isCommit = false;
@@ -46,7 +48,7 @@ public class Response implements HttpServletResponse {
 		StringBuilder cp = new StringBuilder();
 		cp.append(c.getName()+"=");
 		cp.append(c.getValue()+"; ");
-		cp.append("Max-Age"+c.getMaxAge());
+		cp.append("Max-Age="+c.getMaxAge());
 		cookieList.add(c);
 		if(responseHttp.getHeaderMap().containsKey("set-cookie")){
 			responseHttp.getHeaderMap().get("set-cookie").add(cp.toString());
@@ -55,12 +57,7 @@ public class Response implements HttpServletResponse {
 			headerValues.add(cp.toString());
 			responseHttp.getHeaderMap().put("set-cookie", headerValues);
 		}
-		
-		
-		
-		//if(responseHttp)
-		
-
+	
 	}
 
 	/* (non-Javadoc)
@@ -109,11 +106,14 @@ public class Response implements HttpServletResponse {
 			String contentOutput = "<html><body>"+statusCode+statusMessage+"</body></html>";
 			setBufferSize(contentOutput.length());
 			s = new StringWriter(bSize);
+			pw = new BuffWriter(s,false,this);
+			
 			setStatus(statusCode);
 			responseHttp.setErrorStatus(statusMessage);
 			setContentLength(contentOutput.length());
 			setContentType("text/html");
 			
+			pw.println(contentOutput);
 			//Pending to write to print writer
 			flushBuffer();
 			
@@ -132,12 +132,16 @@ public class Response implements HttpServletResponse {
 			String contentOutput = "<html><body>"+statusCode+"</body></html>";
 			setBufferSize(contentOutput.length());
 			s = new StringWriter(bSize);
+			pw = new BuffWriter(s,false,this);
+			
 			setStatus(statusCode);
 			//responseHttp.setErrorStatus(statusMessage);
 			setContentLength(contentOutput.length());
 			setContentType("text/html");
 			
 			//Pending to write to print writer
+			System.out.println(contentOutput);
+			pw.println(contentOutput);
 			flushBuffer();
 			
 		}else{
@@ -284,7 +288,12 @@ public class Response implements HttpServletResponse {
 	 * @see javax.servlet.ServletResponse#getWriter()
 	 */
 	public PrintWriter getWriter() throws IOException {
-		return new PrintWriter(System.out, true);
+		if(s==null || pw == null){
+			s = new StringWriter(bSize);
+			pw = new BuffWriter(s, false, this);
+		}
+		
+		return pw;
 	}
 
 	/* (non-Javadoc)
@@ -339,6 +348,41 @@ public class Response implements HttpServletResponse {
 	 */
 	public void flushBuffer() throws IOException {
 		// TODO Auto-generated method stub
+		if(!isCommitted()){
+			int isSession = 0;
+			Session sp = (Session) req.getSession(false);
+			
+			if(!responseHttp.getHeaderMap().containsKey("content-length")){
+				setContentLength(s.getBuffer().length());
+			}
+			if(req.getSession(false)!=null && sp.isValid()){
+				for(Cookie c: cookieList){
+					if(c.getName().equalsIgnoreCase("jsessionid")&& c.getValue().equals(sp.getId())){
+						isSession = 1;
+					}
+				}
+				if(isSession == 0){
+					Cookie newCookie = new Cookie("JSESSIONID", sp.getId());
+					newCookie.setMaxAge(sp.getMaxInactiveInterval());
+					addCookie(newCookie );
+				}
+			}
+			
+			
+			
+			responseHttp.setWriter(s);
+			//responseMsg.append(s.getBuffer());
+			
+			
+			//byteOutput.write(responseHttp.giveHttpResponseWithHeaders(responseHttp.getVersion()));
+			sock.getOutputStream().write(responseHttp.giveHttpResponseForServlets(responseHttp.getVersion()));
+			sock.getOutputStream().flush();
+			isCommit = true;
+			pw.close();
+			s.close();
+			
+			sock.getOutputStream().close();
+		}
 
 	}
 
@@ -379,7 +423,7 @@ public class Response implements HttpServletResponse {
 	 */
 	public void setLocale(Locale lcl) {
 		// TODO Auto-generated method stub
-		if(!isCommitted() && charEncoding==null){
+		if(!isCommitted() && charEncoding==null && pw==null){
 			locale = lcl;
 		}
 		

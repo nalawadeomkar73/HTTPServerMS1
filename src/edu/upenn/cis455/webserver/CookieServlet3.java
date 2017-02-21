@@ -24,5 +24,6 @@ public class CookieServlet3 extends HttpServlet {
 			out.println("<P>Uh-oh, cookie 'TestCookie' is still on client!</P>");
 		}
 		out.println("</BODY></HTML>");
+		response.flushBuffer();
 	}
 }

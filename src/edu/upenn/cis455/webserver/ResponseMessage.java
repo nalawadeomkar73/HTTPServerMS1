@@ -2,6 +2,7 @@ package edu.upenn.cis455.webserver;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +16,7 @@ public class ResponseMessage{
 	private String commProtocol = "HTTP";
 	StringBuilder responseMsg=null;
 	private String versionNumber;
+	private StringWriter setWrite;
 	//private static final String version_1 = "1.0";
 	//private static final String version_2 = "1.1";
 	
@@ -39,6 +41,15 @@ public class ResponseMessage{
 		this.responseMsg = new StringBuilder();
 	}
 
+	public ResponseMessage() {
+		// TODO Auto-generated constructor stub
+		this.errorCode = "";
+		this.errorStatus = "";
+		this.headerErrorMessages = new HashMap<String,ArrayList<String>>();
+		this.byteOutput=new ByteArrayOutputStream();
+		this.responseMsg = new StringBuilder();
+	}
+
 	public byte[] giveHttpResponse(String version){
 		
 		try
@@ -51,15 +62,19 @@ public class ResponseMessage{
 			for(Map.Entry<String, ArrayList<String>> entry : headerErrorMessages.entrySet()){
 				StringBuilder respMsg = new StringBuilder();
 				for(int i=0;i<entry.getValue().size();i++){
+					//System.out.println(entry.getKey()+":"+entry.getValue().get(i));
 					respMsg.append(entry.getValue().get(i));
 					if(i<entry.getValue().size()-1){
 						respMsg.append(", ");
 					}
 				}
-				responseMsg.append(entry.getKey()+":"+entry.getValue()+"\r\n");
+				
+				responseMsg.append(entry.getKey()+":"+entry.getValue().get(0)+"\r\n");
+				System.out.println(responseMsg.toString());
 			}
 		}
 		responseMsg.append("\r\n");
+		
 		byteOutput.write(responseMsg.toString().getBytes());
 		if(errorOutput!=null){
 			byteOutput.write(errorOutput);
@@ -68,6 +83,7 @@ public class ResponseMessage{
 	
 		catch (IOException e) {	
 		}
+		
 		return byteOutput.toByteArray();
 	}
 
@@ -82,22 +98,60 @@ public class ResponseMessage{
 			for(Map.Entry<String, ArrayList<String>> entry : headerErrorMessages.entrySet()){
 				StringBuilder respMsg = new StringBuilder();
 				for(int i=0;i<entry.getValue().size();i++){
+					System.out.println(entry.getKey()+":"+entry.getValue().get(i));
 					respMsg.append(entry.getValue().get(i));
 					if(i<entry.getValue().size()-1){
 						respMsg.append(", ");
 					}
 				}
-				responseMsg.append(entry.getKey()+":"+entry.getValue()+"\r\n");
+				responseMsg.append(entry.getKey()+":"+entry.getValue().get(0)+"\r\n");
 			}
 		}
 		responseMsg.append("\r\n");
-		
-			byteOutput.write(responseMsg.toString().getBytes());
+	
+		byteOutput.write(responseMsg.toString().getBytes());
 		}catch (IOException e) {
 			}
 		//responseGen();
 		return byteOutput.toByteArray();
 	}
+	
+		public byte[] giveHttpResponseForServlets(String version){
+		
+		try
+		{
+			responseMsg.delete(0, responseMsg.length());
+			byteOutput.reset();
+		    responseMsg.append(commProtocol+"/"+version+" "+errorCode+" "+errorStatus+"\r\n");
+		
+		if(headerErrorMessages!=null){
+			for(Map.Entry<String, ArrayList<String>> entry : headerErrorMessages.entrySet()){
+				StringBuilder respMsg = new StringBuilder();
+				for(int i=0;i<entry.getValue().size();i++){
+					System.out.println(entry.getKey()+":"+entry.getValue().get(i));
+					respMsg.append(entry.getValue().get(i));
+					if(i<entry.getValue().size()-1){
+						respMsg.append(", ");
+					}
+				}
+				responseMsg.append(entry.getKey()+":"+entry.getValue().get(0)+"\r\n");
+			}
+		}
+		responseMsg.append("\r\n");
+		errorOutput= (setWrite.getBuffer().toString().getBytes());
+		byteOutput.write(responseMsg.toString().getBytes());
+		if(errorOutput!=null){
+			byteOutput.write(errorOutput);
+		}	
+		} 
+	
+		catch (IOException e) {	
+		}
+		return byteOutput.toByteArray();
+	}
+	
+	
+	
 	
 	public void responseGen()
 	{
@@ -119,6 +173,18 @@ public class ResponseMessage{
 		this.versionNumber = versionNumber;
 		
 	}
+	
+	public void setWriter(StringWriter s){
+		this.setWrite = s;
+	}
+	
+	public StringWriter getWriter(){
+		return setWrite;
+	}
+	
+	public String getVersion(){
+		return versionNumber;
+	}
 
 	public Map<String,ArrayList<String>> getHeaderMap() {
 		// TODO Auto-generated method stub
@@ -127,6 +193,12 @@ public class ResponseMessage{
 	
 	public void setErrorStatus(String response){
 		this.errorStatus = response;
+	}
+
+	public void setErrorCode(String errorCode) {
+		// TODO Auto-generated method stub
+		this.errorCode = errorCode;
+		
 	}
 
 	

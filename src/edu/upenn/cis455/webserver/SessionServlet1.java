@@ -13,6 +13,7 @@ public class SessionServlet1 extends HttpServlet {
 		out.println("<HTML><HEAD><TITLE>Session Servlet 1</TITLE></HEAD><BODY>");
 		out.println("<P>TestAttribute set to 12345.</P>");
 		out.println("<P>Continue to <A HREF=\"session2\">Session Servlet 2</A>.</P>");
-		out.println("</BODY></HTML>");		
+		out.println("</BODY></HTML>");	
+		response.flushBuffer();
 	}
 }
