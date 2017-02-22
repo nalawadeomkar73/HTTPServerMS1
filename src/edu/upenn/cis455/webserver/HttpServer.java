@@ -120,7 +120,11 @@ public static void main(String args[])
 		  } catch (InterruptedException e) {
 			  
 		  } catch (IOException e) {
-			  System.out.println("Kill the process id. Command is ps ax | grep HW1 ");
+			 // System.out.println("Kill the process id. Command is ps ax | grep HW1 ");
+			  for(String key: servlets.keySet()){
+				  servlets.get(key).destroy();
+			  }
+			  sessionMap.clear();
 		  }
 	  }
 	 

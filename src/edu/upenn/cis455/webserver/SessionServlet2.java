@@ -16,6 +16,6 @@ public class SessionServlet2 extends HttpServlet {
 		out.println("<P>Session invalidated.</P>");
 		out.println("<P>Continue to <A HREF=\"session3\">Session Servlet 3</A>.</P>");
 		out.println("</BODY></HTML>");	
-		response.flushBuffer();
+		
 	}
 }

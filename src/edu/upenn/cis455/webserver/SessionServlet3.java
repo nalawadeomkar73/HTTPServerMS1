@@ -16,6 +16,6 @@ public class SessionServlet3 extends HttpServlet {
 			out.println("<P>Uh-oh, session still exists!</P>");
 		}
 		out.println("</BODY></HTML>");	
-		response.flushBuffer();
+		
 	}
 }

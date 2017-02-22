@@ -34,6 +34,10 @@ public class Handler extends DefaultHandler {
 		}
 		public void characters(char[] ch, int start, int length) {
 			String value = new String(ch, start, length);
+			
+			if(m_state ==13){
+				System.out.print("");
+			}
 			if (m_state == 1) {
 				m_servletName = value;
 				m_state = 0;
@@ -75,8 +79,15 @@ public class Handler extends DefaultHandler {
 					value = "/".concat(value);
 				}
 				if(value.contains("/*")){
-					value.replace("/*", "");
+					value = value.substring(0,value.indexOf("*"))+".*"+value.substring(value.indexOf("*")+"*".length());
+					
+					
 					urlPattern.put(value, m_servName);
+					
+					value = value.substring(0,value.indexOf("/.*"))+""+value.substring(value.indexOf("/.*")+"/.*".length());
+					
+					urlPattern.put(value, m_servName);
+					
 				}else{
 					urlPattern.put(value, m_servName);
 				}
@@ -84,6 +95,8 @@ public class Handler extends DefaultHandler {
 			}
 		}
 		
+		
+
 		private int m_state = 0;
 		private String m_servletName;
 		private String m_paramName;

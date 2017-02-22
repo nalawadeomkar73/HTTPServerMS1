@@ -271,7 +271,7 @@ public class Response implements HttpServletResponse {
 		if(responseHttp.getHeaderMap().containsKey("content-type")){
 			return responseHttp.getHeaderMap().get("content-type").get(0);
 		}else{
-			return null;
+			return "text/html";
 		}
 		
 	}

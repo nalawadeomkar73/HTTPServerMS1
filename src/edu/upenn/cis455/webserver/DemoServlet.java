@@ -11,6 +11,8 @@ public class DemoServlet extends HttpServlet {
 		out.println("<HTML><HEAD><TITLE>Simple Servlet</TITLE></HEAD><BODY>");
 		out.println("<P>Hello!</P>");
 		out.println("</BODY></HTML>");
-		response.flushBuffer();
+		
+		
+		
 	}
 }

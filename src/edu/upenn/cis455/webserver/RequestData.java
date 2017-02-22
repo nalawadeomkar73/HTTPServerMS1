@@ -6,7 +6,7 @@ import java.util.Map;
 
 import javax.servlet.http.Cookie;
 
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
+
 
 public class RequestData {
 
@@ -79,7 +79,7 @@ public class RequestData {
 		}
 		
 		if(versionNumber.equalsIgnoreCase("1.1")&& !parserMap.containsKey("host")){
-			System.out.println("The HTTP request with version number "+versionNumber+" but is without Host defined for "+parseRequest);
+			
 			isCorrect = false;
 		}
 	}

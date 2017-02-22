@@ -22,7 +22,7 @@ public class ResponseMessage{
 	
 	
 	public ResponseMessage(byte[] errorOutput, String errorCode, String errorStatus, Map<String, ArrayList<String>> headerErrorMessages) {
-		// TODO Auto-generated constructor stub
+		
 		this.errorOutput = errorOutput;
 		this.errorCode = errorCode;
 		this.errorStatus = errorStatus;
@@ -42,7 +42,7 @@ public class ResponseMessage{
 	}
 
 	public ResponseMessage() {
-		// TODO Auto-generated constructor stub
+		
 		this.errorCode = "";
 		this.errorStatus = "";
 		this.headerErrorMessages = new HashMap<String,ArrayList<String>>();
@@ -62,7 +62,7 @@ public class ResponseMessage{
 			for(Map.Entry<String, ArrayList<String>> entry : headerErrorMessages.entrySet()){
 				StringBuilder respMsg = new StringBuilder();
 				for(int i=0;i<entry.getValue().size();i++){
-					//System.out.println(entry.getKey()+":"+entry.getValue().get(i));
+					
 					respMsg.append(entry.getValue().get(i));
 					if(i<entry.getValue().size()-1){
 						respMsg.append(", ");
@@ -70,7 +70,7 @@ public class ResponseMessage{
 				}
 				
 				responseMsg.append(entry.getKey()+":"+entry.getValue().get(0)+"\r\n");
-				System.out.println(responseMsg.toString());
+				
 			}
 		}
 		responseMsg.append("\r\n");
@@ -98,7 +98,7 @@ public class ResponseMessage{
 			for(Map.Entry<String, ArrayList<String>> entry : headerErrorMessages.entrySet()){
 				StringBuilder respMsg = new StringBuilder();
 				for(int i=0;i<entry.getValue().size();i++){
-					System.out.println(entry.getKey()+":"+entry.getValue().get(i));
+					
 					respMsg.append(entry.getValue().get(i));
 					if(i<entry.getValue().size()-1){
 						respMsg.append(", ");
@@ -112,7 +112,7 @@ public class ResponseMessage{
 		byteOutput.write(responseMsg.toString().getBytes());
 		}catch (IOException e) {
 			}
-		//responseGen();
+		
 		return byteOutput.toByteArray();
 	}
 	
@@ -128,7 +128,7 @@ public class ResponseMessage{
 			for(Map.Entry<String, ArrayList<String>> entry : headerErrorMessages.entrySet()){
 				StringBuilder respMsg = new StringBuilder();
 				for(int i=0;i<entry.getValue().size();i++){
-					System.out.println(entry.getKey()+":"+entry.getValue().get(i));
+					
 					respMsg.append(entry.getValue().get(i));
 					if(i<entry.getValue().size()-1){
 						respMsg.append(", ");
@@ -153,10 +153,7 @@ public class ResponseMessage{
 	
 	
 	
-	public void responseGen()
-	{
-		System.out.println(responseMsg.toString());
-	}
+	
 	
 	public void clearAll() {
 		// TODO Auto-generated method stub

@@ -76,7 +76,7 @@ class Context implements ServletContext {
 	}
 	//Updated by Omkar Nalawade
 	public String getServerInfo() {
-		return "JavaServer Web Dev Kit/1.0";
+		return "Multithreaded HTTP/1.1";
 	}
 	
 	public Servlet getServlet(String name) {

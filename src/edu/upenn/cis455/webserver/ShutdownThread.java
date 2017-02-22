@@ -24,25 +24,17 @@ public class ShutdownThread extends Thread{
 			} catch (InterruptedException e) {
 				
 			}
-		}
-		
-		
+		}		
 		try {
-			
-			
-			
 			throw new Exception("done");
-		
-			
-		
-			
+	
 		} catch (Exception e) {
-			System.out.println("FInally DOne");
+			
 			try {
 				HttpServer.server.close();
 				HttpServer.timer.cancel();
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
+				
 				e1.printStackTrace();
 			}
 		}
